@@ -1,21 +1,18 @@
-import React, { useState, useEffect } from 'react'
+import React from "react";
+import Login from "./components/Login";
+import HomePage from "./pages/HomePage";
+import CapturePage from "./pages/CapturePage";
+// import UploadTest2 from "./pages/UploadTest2";
 
 const App = () => {
-  const [message, setMessage] = useState('loading...')
-
-  useEffect(() => {
-    fetch('http://localhost:5158/api/health')
-      .then((res) => res.text())
-      .then((data) => setMessage(data))
-      .catch((err) => {
-        console.error(err);
-        setMessage('failed to load message');
-      });
-  },[])
-
   return (
-    <div>{message}</div>
-  )
-}
+    <div>
+      <Login />
+      <HomePage />
+      <CapturePage />
+      {/* <UploadTest2 /> */}
+    </div>
+  );
+};
 
-export default App
+export default App;

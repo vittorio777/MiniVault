@@ -22,9 +22,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.MapControllers();
-
 app.UseCors("AllowFrontend");
+
+app.UseStaticFiles();
+
+app.MapControllers();
 
 app.MapGet("/api/health", () => "Mine+ API Running");
 

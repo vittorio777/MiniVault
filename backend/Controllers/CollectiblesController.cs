@@ -17,9 +17,16 @@ public class CollectiblesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<Collectible>>> GetCollectibles()
+    public async Task<ActionResult<List<Collectible>>> GetCollectibles([FromQuery] int? userId)
     {
-        var collectibles = await _context.Collectibles
+        var query = _context.Collectibles.AsQueryable();
+
+        if (userId.HasValue)
+        {
+            query = query.Where(c => c.UserId == userId.Value);
+        }
+        
+        var collectibles = await query
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 
