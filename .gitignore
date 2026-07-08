@@ -11,6 +11,7 @@ backend/obj/
 backend/*.user
 backend/*.suo
 backend/.vs/
+backend/wwwroot/*
 
 # Environment files
 .env

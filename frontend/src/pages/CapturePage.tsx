@@ -21,7 +21,7 @@ const CapturePage = () => {
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
   const [generateStatus, setGenerateStatus] = useState<GenerateStatus>("idle");
 
-  //   上传file
+  //   选择file
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -29,6 +29,7 @@ const CapturePage = () => {
     setSelectedFile(file);
   }
 
+  //   上传file
   async function handleFileUpload() {
     try {
       if (!selectedFile) {
@@ -40,10 +41,13 @@ const CapturePage = () => {
       formData.append("file", selectedFile);
 
       setUploadStatus("uploading");
-      const response = await fetch("http://localhost:5158/api/images/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "http://localhost:5158/api/generation/capture",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (!response) {
         alert("Failed to upload");
@@ -52,18 +56,11 @@ const CapturePage = () => {
       }
 
       const data = await response.json();
-      setImageUrl(data.imageUrl);
+      setImageUrl(data.generatedImageUrl);
 
-      const collectibleData = await createCollectible({
-        ...collectible,
-        title: "New Collectible",
-        category: "Unknown",
-        description: "Captured from real life.",
-        originalImageUrl: data.imageUrl,
-        generatedImageUrl: data.imageUrl,
-      });
+      // const collectibleData = await createCollectible(collectible);
       setUploadStatus("success");
-      console.log("Collectible created:", collectibleData);
+      console.log("Collectible created:", data);
     } catch (error) {
       console.error("Error creating collectible:", error);
       setUploadStatus("error");

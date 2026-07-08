@@ -1,62 +1,32 @@
 using Microsoft.AspNetCore.Mvc;
-// using Microsoft.EntityFrameworkCore;
-
-using MiniVault.Models;
-using MiniVault.Data;
+using MiniVault.Services;
 
 namespace MiniVault.Controllers;
+// 测试用，暂时留着
 
 [ApiController]
 [Route("api/[controller]")]
-public class ImagesController: ControllerBase
+public class ImagesController : ControllerBase
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly ImageService _imageService;
 
-    public ImagesController(IWebHostEnvironment environment)
+    public ImagesController(ImageService imageService)
     {
-        _environment = environment;
+        _imageService = imageService;
     }
 
-    [HttpPost("upload")]
+    [HttpPost("capture")]
     public async Task<IActionResult> UploadImage(IFormFile file)
     {
-        if (file == null || file.Length == 0)
+        try
         {
-            return BadRequest("No file uploaded.");
+            var imageUrl = await _imageService.UploadImageAsync(file);
+            return Ok(new { imageUrl });
         }
-
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-
-        var imageFileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-        if (!allowedExtensions.Contains(imageFileExtension))
+        catch (ArgumentException ex)
         {
-            return BadRequest("Only JPG, PNG, and WEBP images are allowed.");
+            return BadRequest(ex.Message);
         }
-
-        var maxFileSize = 5 * 1024 * 1024; // 5MB
-
-        if (file.Length > maxFileSize)
-        {
-            return BadRequest("File size must under 5MB");
-        }
-
-        var uploadFolder = Path.Combine(_environment.WebRootPath ?? "wwwroot", "uploads");
-
-        if (!Directory.Exists(uploadFolder))
-        {
-            Directory.CreateDirectory(uploadFolder);
-        }
-
-        var fileExtension = Path.GetExtension(file.FileName);
-        var fileName = $"{Guid.NewGuid()}{fileExtension}";
-        var filePath = Path.Combine(uploadFolder, fileName);
-
-        await using var stream = new FileStream(filePath, FileMode.Create);
-        await file.CopyToAsync(stream);
-
-        var imageUrl = $"/uploads/{fileName}";
-        
-        return Ok(new {imageUrl});
+        ;
     }
 }
