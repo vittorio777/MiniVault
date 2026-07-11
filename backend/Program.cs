@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MiniVault.Data;
+using MiniVault.Models;
 using MiniVault.Services;
 
 
@@ -7,8 +8,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<CollectibleService>();
+builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ImageService>();
 builder.Services.AddScoped<GenerationService>();
+builder.Services.AddScoped<AchievementService>();
+
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
