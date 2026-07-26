@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState } from "react";
 
+// 测试用
 const Login = () => {
   const [nickname, setNickname] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
   async function handleLogin() {
-
     const response = await fetch("http://localhost:5158/api/users/login", {
       method: "POST",
       headers: {
@@ -37,24 +37,33 @@ const Login = () => {
     console.log(data);
   }
 
-
   return (
     <div>
-        <div>
-          <label>昵称</label>
-          <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} placeholder='name'/>
-        </div>
-          
-        <div>
-          <label>密码</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder='Password'/>
-        </div>
+      <div>
+        <label>昵称</label>
+        <input
+          type="text"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          placeholder="name"
+        />
+      </div>
 
-        <button onClick={handleLogin}>login</button>
+      <div>
+        <label>密码</label>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+        />
+      </div>
 
-        <button onClick={handleRegister}>Register</button>
+      <button onClick={handleLogin}>login</button>
+
+      <button onClick={handleRegister}>Register</button>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
