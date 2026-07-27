@@ -1,3 +1,4 @@
+import { getImageUrl } from "@/utils/imageUrl";
 import type { Collectible } from "@/types/collectible";
 
 interface CollectionCardProps {
@@ -11,7 +12,10 @@ export default function CollectionCard({
 }: CollectionCardProps) {
   return (
     <button type="button" onClick={() => onClick(collectible)}>
-      <img src={collectible.generatedImageUrl} alt={collectible.title} />
+      <img
+        src={getImageUrl(collectible.generatedImageUrl)}
+        alt={collectible.title}
+      />
 
       <h3>{collectible.title}</h3>
 

@@ -1,45 +1,62 @@
 using Microsoft.EntityFrameworkCore;
-using MiniVault.Models;
 using MiniVault.Data;
+using MiniVault.Models;
 
 namespace MiniVault.Services;
 
 public class CollectibleService
 {
     private readonly AppDbContext _context;
+
     public CollectibleService(AppDbContext context)
     {
         _context = context;
     }
 
-    // 查询用户全部收藏
-    public async Task<List<Collectible>> GetByUserIdAsync(int userId)
+    public async Task<List<Collectible>> GetByUserIdAsync(
+        int userId)
     {
         return await _context.Collectibles
+            .AsNoTracking()
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
     }
 
-    // 查询用户某类收藏
-    public async Task<List<Collectible>> GetSelectedCategoryAsync(int userId, string category)
+    public async Task<List<Collectible>> GetSelectedCategoryAsync(
+        int userId,
+        string category)
     {
         return await _context.Collectibles
-            .Where(c => c.UserId == userId && c.Category == category)
+            .AsNoTracking()
+            .Where(c =>
+                c.UserId == userId &&
+                c.Category == category)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
     }
 
-    // 查询指定id收藏
-    public async Task<Collectible?> GetByIdAsync(int id)
+    public async Task<Collectible?> GetByIdAsync(
+        int id,
+        int userId)
     {
-        return await _context.Collectibles.FindAsync(id);
+        return await _context.Collectibles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c =>
+                c.Id == id &&
+                c.UserId == userId);
     }
 
-    // 修改指定id收藏的信息
-    public async Task<bool> UpdateByIdAsync(int id, Collectible updatedCollectible)
+    public async Task<bool> UpdateByIdAsync(
+        int id,
+        int userId,
+        Collectible updatedCollectible)
     {
-        var collectible = await _context.Collectibles.FindAsync(id);
+        var collectible = await _context.Collectibles
+            .FirstOrDefaultAsync(c =>
+                c.Id == id &&
+                c.UserId == userId);
+
         if (collectible == null)
         {
             return false;
@@ -51,33 +68,60 @@ public class CollectibleService
         collectible.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
         return true;
     }
 
-    // 删除某id收藏
-    public async Task<bool> DeleteByIdAsync(int id)
+    public async Task<Collectible?> DeleteByIdAsync(
+        int id,
+        int userId)
     {
-        var collectible = await _context.Collectibles.FindAsync(id);
+        var collectible = await _context.Collectibles
+            .FirstOrDefaultAsync(c =>
+                c.Id == id &&
+                c.UserId == userId);
+
         if (collectible == null)
         {
-            return false;
+            return null;
         }
 
         _context.Collectibles.Remove(collectible);
+
         await _context.SaveChangesAsync();
-        return true;
+
+        return collectible;
     }
 
-    // 创建新的收藏
-    public async Task<Collectible> CreateAsync(Collectible collectible)
+    public async Task<Collectible> CreateAsync(
+        Collectible collectible)
     {
-        collectible.UpdatedAt = DateTime.UtcNow;
-        collectible.CreatedAt = DateTime.UtcNow;
+        if (collectible.UserId <= 0)
+        {
+            throw new InvalidOperationException(
+                "A valid user ID is required."
+            );
+        }
+
+        var userExists = await _context.Users
+            .AnyAsync(u => u.Id == collectible.UserId);
+
+        if (!userExists)
+        {
+            throw new InvalidOperationException(
+                "The authenticated user does not exist."
+            );
+        }
+
+        var now = DateTime.UtcNow;
+
+        collectible.CreatedAt = now;
+        collectible.UpdatedAt = now;
 
         _context.Collectibles.Add(collectible);
+
         await _context.SaveChangesAsync();
 
         return collectible;
     }
 }
-

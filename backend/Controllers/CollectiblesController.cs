@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MiniVault.DTOs;
+using MiniVault.Extensions;
 using MiniVault.Models;
 using MiniVault.Services;
 
@@ -7,19 +9,24 @@ namespace MiniVault.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class CollectiblesController : ControllerBase
 {
     private readonly CollectibleService _collectibleService;
 
-    public CollectiblesController(CollectibleService collectibleService)
+    public CollectiblesController(
+        CollectibleService collectibleService)
     {
         _collectibleService = collectibleService;
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<ActionResult<List<CollectibleResponse>>> GetCollectiblesByUserId(int userId)
+    [HttpGet]
+    public async Task<ActionResult<List<CollectibleResponse>>> GetCollectibles()
     {
-        var collectibles = await _collectibleService.GetByUserIdAsync(userId);
+        var userId = User.GetUserId();
+
+        var collectibles =
+            await _collectibleService.GetByUserIdAsync(userId);
 
         var response = collectibles
             .Select(ToResponse)
@@ -28,45 +35,65 @@ public class CollectiblesController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("user/{userId}/category/{category}")]
-    public async Task<ActionResult<List<CollectibleResponse>>> GetCollectiblesByUserIdAndCategory(int userId, string category)
+    [HttpGet("category/{category}")]
+    public async Task<ActionResult<List<CollectibleResponse>>> GetCollectiblesByCategory(
+        string category)
     {
-        var collectibles = await _collectibleService.GetSelectedCategoryAsync(userId, category);
+        var userId = User.GetUserId();
+
+        var collectibles =
+            await _collectibleService.GetSelectedCategoryAsync(
+                userId,
+                category
+            );
 
         var response = collectibles
-            .Select(c => ToResponse(c))
+            .Select(ToResponse)
             .ToList();
 
         return Ok(response);
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<CollectibleResponse>> GetCollectibleById(int id)
+    [HttpGet("{id:int}")]
+    public async Task<ActionResult<CollectibleResponse>> GetCollectibleById(
+        int id)
     {
-        var collectible = await _collectibleService.GetByIdAsync(id);
+        var userId = User.GetUserId();
+
+        var collectible =
+            await _collectibleService.GetByIdAsync(
+                id,
+                userId
+            );
 
         if (collectible == null)
         {
             return NotFound();
         }
 
-        var response = ToResponse(collectible);
-
-        return Ok(response);
+        return Ok(ToResponse(collectible));
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCollectibleById(int id, UpdateCollectibleRequest request)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateCollectibleById(
+        int id,
+        UpdateCollectibleRequest request)
     {
+        var userId = User.GetUserId();
+
         var collectible = new Collectible
         {
             Title = request.Title,
             Category = request.Category,
-            Description = request.Description,
-            OriginalImageUrl = request.OriginalImageUrl,
-            GeneratedImageUrl = request.GeneratedImageUrl,
+            Description = request.Description
         };
-        var success = await _collectibleService.UpdateByIdAsync(id, collectible);
+
+        var success =
+            await _collectibleService.UpdateByIdAsync(
+                id,
+                userId,
+                collectible
+            );
 
         if (!success)
         {
@@ -76,12 +103,19 @@ public class CollectiblesController : ControllerBase
         return NoContent();
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCollectibleById(int id)
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> DeleteCollectibleById(
+        int id)
     {
-        var success = await _collectibleService.DeleteByIdAsync(id);
+        var userId = User.GetUserId();
 
-        if (!success)
+        var deletedCollectible =
+            await _collectibleService.DeleteByIdAsync(
+                id,
+                userId
+            );
+
+        if (deletedCollectible == null)
         {
             return NotFound();
         }
@@ -90,21 +124,28 @@ public class CollectiblesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<CollectibleResponse>> CreateCollectible(CreateCollectibleRequest request)
+    public async Task<ActionResult<CollectibleResponse>> CreateCollectible(
+        CreateCollectibleRequest request)
     {
+        var userId = User.GetUserId();
+
         var collectible = new Collectible
         {
-            UserId = request.UserId,
+            UserId = userId,
             Title = request.Title,
             Category = request.Category,
             Description = request.Description,
             OriginalImageUrl = request.OriginalImageUrl,
-            GeneratedImageUrl = request.GeneratedImageUrl,
+            GeneratedImageUrl = request.GeneratedImageUrl
         };
 
-        var createdCollectible = await _collectibleService.CreateAsync(collectible);
+        var createdCollectible =
+            await _collectibleService.CreateAsync(
+                collectible
+            );
 
-        var response = ToResponse(createdCollectible);
+        var response =
+            ToResponse(createdCollectible);
 
         return CreatedAtAction(
             nameof(GetCollectibleById),
@@ -113,7 +154,8 @@ public class CollectiblesController : ControllerBase
         );
     }
 
-    private static CollectibleResponse ToResponse(Collectible collectible)
+    private static CollectibleResponse ToResponse(
+        Collectible collectible)
     {
         return new CollectibleResponse
         {

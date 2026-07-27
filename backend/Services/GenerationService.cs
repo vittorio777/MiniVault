@@ -1,17 +1,18 @@
 using System.Text.Json;
-using OpenAI.Chat;
 using Google.GenAI;
 using Google.GenAI.Types;
+using OpenAI.Chat;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Processing;
 
-using MiniVault.Services;
 using MiniVault.Models;
 
 using IOFile = System.IO.File;
 using SysEnvironment = System.Environment;
 using SharpImage = SixLabors.ImageSharp.Image;
+
+namespace MiniVault.Services;
 
 public class GenerationService
 {
@@ -31,13 +32,19 @@ public class GenerationService
         _collectibleService = collectibleService;
         _environment = environment;
 
-        var openaiApiKey = configuration["OpenAI:ApiKey"]
+        var openaiApiKey =
+            configuration["OpenAI:ApiKey"]
             ?? SysEnvironment.GetEnvironmentVariable("OPENAI_API_KEY")
-            ?? throw new InvalidOperationException("OpenAI API key is missing.");
+            ?? throw new InvalidOperationException(
+                "OpenAI API key is missing."
+            );
 
-        var googleApiKey = configuration["GoogleAI:ApiKey"]
+        var googleApiKey =
+            configuration["GoogleAI:ApiKey"]
             ?? SysEnvironment.GetEnvironmentVariable("GOOGLEAI_API_KEY")
-            ?? throw new InvalidOperationException("Google AI API key is missing.");
+            ?? throw new InvalidOperationException(
+                "Google AI API key is missing."
+            );
 
         _openaiClient = new ChatClient(
             model: "gpt-5.4-nano",
@@ -49,47 +56,97 @@ public class GenerationService
         );
     }
 
-    public async Task<Collectible> CaptureAsync(IFormFile file)
+    public async Task<Collectible> CaptureAsync(
+        IFormFile file,
+        int userId)
     {
-        var originalImageUrl = await _imageService.UploadImageAsync(file);
-        var collectible = await GenerateInfoAsync(originalImageUrl);
-        var generatedImageUrl = await GenerateImageAsync(originalImageUrl);
+        if (userId <= 0)
+        {
+            throw new UnauthorizedAccessException(
+                "Invalid authenticated user."
+            );
+        }
 
-        collectible.OriginalImageUrl = originalImageUrl;
-        collectible.GeneratedImageUrl = generatedImageUrl;
+        if (file == null || file.Length == 0)
+        {
+            throw new ArgumentException(
+                "An image file is required.",
+                nameof(file)
+            );
+        }
 
-        return await _collectibleService.CreateAsync(collectible);
+        var originalImageUrl = string.Empty;
+        var generatedImageUrl = string.Empty;
+
+        try
+        {
+            originalImageUrl =
+                await _imageService.UploadImageAsync(file);
+
+            var collectible =
+                await GenerateInfoAsync(originalImageUrl);
+
+            generatedImageUrl =
+                await GenerateImageAsync(originalImageUrl);
+
+            collectible.UserId = userId;
+            collectible.OriginalImageUrl = originalImageUrl;
+            collectible.GeneratedImageUrl = generatedImageUrl;
+
+            return await _collectibleService.CreateAsync(
+                collectible
+            );
+        }
+        catch
+        {
+            DeleteLocalImageIfExists(generatedImageUrl);
+            DeleteLocalImageIfExists(originalImageUrl);
+
+            throw;
+        }
     }
 
-    private async Task<Collectible> GenerateInfoAsync(string originalImageUrl)
+    private async Task<Collectible> GenerateInfoAsync(
+        string originalImageUrl)
     {
-        var localPath = ConvertImageUrlToLocalPath(originalImageUrl);
+        var localPath =
+            ConvertImageUrlToLocalPath(originalImageUrl);
 
         if (!IOFile.Exists(localPath))
         {
-            throw new FileNotFoundException("Original image does not exist.", localPath);
+            throw new FileNotFoundException(
+                "Original image does not exist.",
+                localPath
+            );
         }
 
-        var bytes = await IOFile.ReadAllBytesAsync(localPath);
-        var mimeType = GetMimeType(localPath);
+        var bytes =
+            await IOFile.ReadAllBytesAsync(localPath);
+
+        var mimeType =
+            GetMimeType(localPath);
 
         try
         {
             var messages = new List<ChatMessage>
             {
-                new UserChatMessage([
-                    ChatMessageContentPart.CreateTextPart("""
-                    Analyze this image for a collectible gallery app.
+                new UserChatMessage(
+                [
+                    ChatMessageContentPart.CreateTextPart(
+                        """
+                        Analyze this image for a collectible gallery app.
 
-                    Return valid JSON only, no markdown, no explanation.
+                        Return valid JSON only, no markdown, no explanation.
 
-                    Required JSON format:
-                    {
-                      "title": "short title",
-                      "category": "one category, e.g. food, animal, vehicle, building, object, person, landscape, other",
-                      "description": "one short sentence"
-                    }
-                    """),
+                        Required JSON format:
+                        {
+                          "title": "short title",
+                          "category": "one category, e.g. food, animal, vehicle, building, object, person, landscape, other",
+                          "description": "one short sentence"
+                        }
+                        """
+                    ),
+
                     ChatMessageContentPart.CreateImagePart(
                         BinaryData.FromBytes(bytes),
                         mimeType
@@ -99,149 +156,215 @@ public class GenerationService
 
             var options = new ChatCompletionOptions
             {
-                ResponseFormat = ChatResponseFormat.CreateJsonObjectFormat()
+                ResponseFormat =
+                    ChatResponseFormat.CreateJsonObjectFormat()
             };
 
-            var response = await _openaiClient.CompleteChatAsync(messages, options);
-            var json = response.Value.Content[0].Text;
+            var response =
+                await _openaiClient.CompleteChatAsync(
+                    messages,
+                    options
+                );
 
-            var analysis = JsonSerializer.Deserialize<ImageAnalysisResult>(
-                json,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                }
-            );
+            var json =
+                response.Value.Content[0].Text;
+
+            var analysis =
+                JsonSerializer.Deserialize<ImageAnalysisResult>(
+                    json,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }
+                );
 
             if (analysis == null)
             {
-                throw new InvalidOperationException("Failed to parse image analysis result.");
+                throw new InvalidOperationException(
+                    "Failed to parse image analysis result."
+                );
             }
 
             return new Collectible
             {
-                Title = string.IsNullOrWhiteSpace(analysis.Title)
-                    ? "Untitled collectible"
-                    : analysis.Title.Trim(),
+                Title =
+                    string.IsNullOrWhiteSpace(analysis.Title)
+                        ? "Untitled collectible"
+                        : analysis.Title.Trim(),
 
-                Category = string.IsNullOrWhiteSpace(analysis.Category)
-                    ? "other"
-                    : analysis.Category.Trim(),
+                Category =
+                    string.IsNullOrWhiteSpace(analysis.Category)
+                        ? "other"
+                        : analysis.Category.Trim(),
 
-                Description = string.IsNullOrWhiteSpace(analysis.Description)
-                    ? "A captured item from real life."
-                    : analysis.Description.Trim()
+                Description =
+                    string.IsNullOrWhiteSpace(
+                        analysis.Description
+                    )
+                        ? "A captured item from real life."
+                        : analysis.Description.Trim()
             };
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("Failed to generate collectible info.", ex);
+            throw new InvalidOperationException(
+                "Failed to generate collectible info.",
+                ex
+            );
         }
     }
 
-    private async Task<string> GenerateImageAsync(string originalImageUrl)
+    private async Task<string> GenerateImageAsync(
+        string originalImageUrl)
     {
         return await RetryAsync(async () =>
         {
-            var localPath = ConvertImageUrlToLocalPath(originalImageUrl);
+            var localPath =
+                ConvertImageUrlToLocalPath(originalImageUrl);
 
             if (!IOFile.Exists(localPath))
             {
-                throw new FileNotFoundException("Original image does not exist.", localPath);
+                throw new FileNotFoundException(
+                    "Original image does not exist.",
+                    localPath
+                );
             }
 
-            // localPath = await PrepareImageForGoogleAsync(localPath);
+            var outputFileName =
+                $"{Guid.NewGuid()}.png";
 
-            var outputFileName = $"{Guid.NewGuid()}.png";
-            var outputRelativePath = Path.Combine("uploads", "generated", outputFileName);
-            var outputLocalPath = Path.Combine(GetWebRootPath(), outputRelativePath);
+            var outputRelativePath =
+                Path.Combine(
+                    "uploads",
+                    "generated",
+                    outputFileName
+                );
 
-            Directory.CreateDirectory(Path.GetDirectoryName(outputLocalPath)!);
+            var outputLocalPath =
+                Path.Combine(
+                    GetWebRootPath(),
+                    outputRelativePath
+                );
 
-            var generatedBytes = await GenerateGoogleImageBytesAsync(localPath);
+            Directory.CreateDirectory(
+                Path.GetDirectoryName(outputLocalPath)!
+            );
 
-            await IOFile.WriteAllBytesAsync(outputLocalPath, generatedBytes);
+            var generatedBytes =
+                await GenerateGoogleImageBytesAsync(
+                    localPath
+                );
 
-            return "/" + outputRelativePath.Replace(Path.DirectorySeparatorChar, '/');
+            await IOFile.WriteAllBytesAsync(
+                outputLocalPath,
+                generatedBytes
+            );
+
+            return "/" +
+                   outputRelativePath.Replace(
+                       Path.DirectorySeparatorChar,
+                       '/'
+                   );
         });
     }
 
-    private async Task<byte[]> GenerateGoogleImageBytesAsync(string localPath)
+    private async Task<byte[]> GenerateGoogleImageBytesAsync(
+        string localPath)
     {
-        var imageBytes = await IOFile.ReadAllBytesAsync(localPath);
+        var imageBytes =
+            await IOFile.ReadAllBytesAsync(localPath);
 
         var prompt =
-  "Transform the original subject into a premium collectible figure while preserving the recognizable identity of the original subject. " +
-  "Professionally sculpted with crisp details and a high-quality hand-painted resin finish. " +
-  "Mounted on an elegant wooden round display base. " +
-  "Decorate the base with a few carefully designed miniature accessories that naturally match the subject without creating a full scene. " +
-  "Full product shot with the entire figure and display base fully visible. " +
-  "Centered composition with balanced margins, occupying approximately 70% of the frame. " +
-  "Slightly elevated three-quarter view. " +
-  "Professional studio catalog product photography. " +
-  "Pure solid warm cream background with no environmental elements or original background visible. " +
-  "Soft warm studio lighting, subtle shadows and shallow depth of field. " +
-  "Treat all text, logos, watermarks and UI elements in the reference image as irrelevant artifacts. Exclude them completely from the generated collectible.";
-        //   "Remove all text, logos, watermarks and overlays.";
+            "Transform the original subject into a premium collectible figure while preserving the recognizable identity of the original subject. " +
+            "Professionally sculpted with crisp details and a high-quality hand-painted resin finish. " +
+            "Mounted on an elegant wooden round display base. " +
+            "Decorate the base with a few carefully designed miniature accessories that naturally match the subject without creating a full scene. " +
+            "Full product shot with the entire figure and display base fully visible. " +
+            "Centered composition with balanced margins, occupying approximately 70% of the frame. " +
+            "Slightly elevated three-quarter view. " +
+            "Professional studio catalog product photography. " +
+            "Pure solid warm cream background with no environmental elements or original background visible. " +
+            "Soft warm studio lighting, subtle shadows and shallow depth of field. " +
+            "Treat all text, logos, watermarks and UI elements in the reference image as irrelevant artifacts. " +
+            "Exclude them completely from the generated collectible.";
 
-        var response = await _googleClient.Models.GenerateContentAsync(
-            model: "gemini-2.5-flash-image",
-            contents: new List<Content>
-            {
-                new()
+        var response =
+            await _googleClient.Models.GenerateContentAsync(
+                model: "gemini-2.5-flash-image",
+
+                contents: new List<Content>
                 {
-                    Role = "user",
-                    Parts = new List<Part>
+                    new()
                     {
-                        new()
+                        Role = "user",
+
+                        Parts = new List<Part>
                         {
-                            Text = prompt
-                        },
-                        new()
-                        {
-                            InlineData = new Blob
+                            new()
                             {
-                                MimeType = GetMimeType(localPath),
-                                Data = imageBytes
+                                Text = prompt
+                            },
+
+                            new()
+                            {
+                                InlineData = new Blob
+                                {
+                                    MimeType =
+                                        GetMimeType(localPath),
+
+                                    Data = imageBytes
+                                }
                             }
                         }
                     }
-                }
-            },
-            config: new GenerateContentConfig
-            {
-                ResponseModalities = new List<string>
-                {
-                    "TEXT",
-                    "IMAGE"
-                }
-            }
-        );
+                },
 
-        var parts = response.Candidates?[0].Content?.Parts;
+                config: new GenerateContentConfig
+                {
+                    ResponseModalities =
+                        new List<string>
+                        {
+                            "TEXT",
+                            "IMAGE"
+                        }
+                }
+            );
+
+        var parts =
+            response.Candidates?[0]
+                .Content?
+                .Parts;
 
         if (parts == null)
         {
-            throw new InvalidOperationException("Google image generation returned no content parts.");
+            throw new InvalidOperationException(
+                "Google image generation returned no content parts."
+            );
         }
 
         foreach (var part in parts)
         {
             if (!string.IsNullOrWhiteSpace(part.Text))
             {
-                Console.WriteLine($"Google image text response: {part.Text}");
+                Console.WriteLine(
+                    $"Google image text response: {part.Text}"
+                );
             }
 
-            if (part.InlineData?.Data is { Length: > 0 } data)
+            if (part.InlineData?.Data is
+                { Length: > 0 } data)
             {
                 return data;
             }
         }
 
-        throw new InvalidOperationException("No image returned from Google image generation.");
+        throw new InvalidOperationException(
+            "No image returned from Google image generation."
+        );
     }
 
-    private static async Task<T> RetryAsync<T>(Func<Task<T>> action)
+    private static async Task<T> RetryAsync<T>(
+        Func<Task<T>> action)
     {
         var delays = new[]
         {
@@ -253,21 +376,35 @@ public class GenerationService
 
         Exception? lastException = null;
 
-        for (var attempt = 1; attempt <= delays.Length + 1; attempt++)
+        for (
+            var attempt = 1;
+            attempt <= delays.Length + 1;
+            attempt++
+        )
         {
             try
             {
-                Console.WriteLine($"Google image generation attempt {attempt}");
+                Console.WriteLine(
+                    $"Google image generation attempt {attempt}"
+                );
+
                 return await action();
             }
             catch (Exception ex)
             {
                 lastException = ex;
 
-                var retryable = IsRetryableGoogleError(ex);
-                var hasMoreAttempts = attempt <= delays.Length;
+                var retryable =
+                    IsRetryableGoogleError(ex);
 
-                Console.WriteLine($"Google image generation failed. Attempt={attempt}, Retryable={retryable}");
+                var hasMoreAttempts =
+                    attempt <= delays.Length;
+
+                Console.WriteLine(
+                    $"Google image generation failed. " +
+                    $"Attempt={attempt}, Retryable={retryable}"
+                );
+
                 Console.WriteLine(ex.Message);
 
                 if (!retryable || !hasMoreAttempts)
@@ -275,96 +412,201 @@ public class GenerationService
                     break;
                 }
 
-                await Task.Delay(delays[attempt - 1]);
+                await Task.Delay(
+                    delays[attempt - 1]
+                );
             }
         }
 
         throw new InvalidOperationException(
-            "Image generation failed after retry attempts. This is likely a temporary Google AI image service error.",
+            "Image generation failed after retry attempts. " +
+            "This is likely a temporary Google AI image service error.",
             lastException
         );
     }
 
-    private static bool IsRetryableGoogleError(Exception ex)
+    private static bool IsRetryableGoogleError(
+        Exception ex)
     {
         var text = ex.ToString();
 
-        return text.Contains("429", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("500", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("502", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("503", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("504", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("timeout", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("temporarily unavailable", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("resource exhausted", StringComparison.OrdinalIgnoreCase)
-            || text.Contains("unavailable", StringComparison.OrdinalIgnoreCase);
+        return
+            text.Contains(
+                "429",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "500",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "502",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "503",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "504",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "timeout",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "temporarily unavailable",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "resource exhausted",
+                StringComparison.OrdinalIgnoreCase
+            )
+            || text.Contains(
+                "unavailable",
+                StringComparison.OrdinalIgnoreCase
+            );
     }
 
-    private async Task<string> PrepareImageForGoogleAsync(string inputPath)
+    private async Task<string> PrepareImageForGoogleAsync(
+        string inputPath)
     {
-        using var image = await SharpImage.LoadAsync(inputPath);
+        using var image =
+            await SharpImage.LoadAsync(inputPath);
 
-        image.Mutate(x => x.Resize(new ResizeOptions
-        {
-            Size = new Size(1024, 1024),
-            Mode = ResizeMode.Max
-        }));
+        image.Mutate(x =>
+            x.Resize(new ResizeOptions
+            {
+                Size = new Size(1024, 1024),
+                Mode = ResizeMode.Max
+            })
+        );
 
-        var convertedFileName = $"{Guid.NewGuid()}.jpg";
-        var convertedRelativePath = Path.Combine("uploads", "converted", convertedFileName);
-        var convertedLocalPath = Path.Combine(GetWebRootPath(), convertedRelativePath);
+        var convertedFileName =
+            $"{Guid.NewGuid()}.jpg";
 
-        Directory.CreateDirectory(Path.GetDirectoryName(convertedLocalPath)!);
+        var convertedRelativePath =
+            Path.Combine(
+                "uploads",
+                "converted",
+                convertedFileName
+            );
 
-        await image.SaveAsJpegAsync(convertedLocalPath, new JpegEncoder
-        {
-            Quality = 88
-        });
+        var convertedLocalPath =
+            Path.Combine(
+                GetWebRootPath(),
+                convertedRelativePath
+            );
 
-        Console.WriteLine($"Prepared image: {convertedLocalPath}");
-        Console.WriteLine($"Prepared image size: {new FileInfo(convertedLocalPath).Length / 1024} KB");
+        Directory.CreateDirectory(
+            Path.GetDirectoryName(convertedLocalPath)!
+        );
+
+        await image.SaveAsJpegAsync(
+            convertedLocalPath,
+            new JpegEncoder
+            {
+                Quality = 88
+            }
+        );
+
+        Console.WriteLine(
+            $"Prepared image: {convertedLocalPath}"
+        );
+
+        Console.WriteLine(
+            $"Prepared image size: " +
+            $"{new FileInfo(convertedLocalPath).Length / 1024} KB"
+        );
 
         return convertedLocalPath;
     }
 
-    private string ConvertImageUrlToLocalPath(string imageUrl)
+    private string ConvertImageUrlToLocalPath(
+        string imageUrl)
     {
-        var relativePath = imageUrl
-            .TrimStart('/')
-            .Replace("/", Path.DirectorySeparatorChar.ToString());
+        var relativePath =
+            imageUrl
+                .TrimStart('/')
+                .Replace(
+                    "/",
+                    Path.DirectorySeparatorChar.ToString()
+                );
 
-        return Path.Combine(GetWebRootPath(), relativePath);
+        return Path.Combine(
+            GetWebRootPath(),
+            relativePath
+        );
+    }
+
+    private void DeleteLocalImageIfExists(
+        string imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+        {
+            return;
+        }
+
+        try
+        {
+            var localPath =
+                ConvertImageUrlToLocalPath(imageUrl);
+
+            if (IOFile.Exists(localPath))
+            {
+                IOFile.Delete(localPath);
+            }
+        }
+        catch
+        {
+            // Ignore cleanup failure.
+        }
     }
 
     private string GetWebRootPath()
     {
-        if (!string.IsNullOrWhiteSpace(_environment.WebRootPath))
+        if (!string.IsNullOrWhiteSpace(
+                _environment.WebRootPath
+            ))
         {
             return _environment.WebRootPath;
         }
 
-        return Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        return Path.Combine(
+            Directory.GetCurrentDirectory(),
+            "wwwroot"
+        );
     }
 
-    private static string GetMimeType(string path)
+    private static string GetMimeType(
+        string path)
     {
-        var extension = Path.GetExtension(path).ToLowerInvariant();
+        var extension =
+            Path.GetExtension(path)
+                .ToLowerInvariant();
 
         return extension switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".webp" => "image/webp",
-            _ => throw new NotSupportedException($"Unsupported image type: {extension}")
+
+            _ => throw new NotSupportedException(
+                $"Unsupported image type: {extension}"
+            )
         };
     }
 
-    private class ImageAnalysisResult
+    private sealed class ImageAnalysisResult
     {
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } =
+            string.Empty;
 
-        public string Category { get; set; } = string.Empty;
+        public string Category { get; set; } =
+            string.Empty;
 
-        public string Description { get; set; } = string.Empty;
+        public string Description { get; set; } =
+            string.Empty;
     }
 }

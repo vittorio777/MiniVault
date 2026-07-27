@@ -2,7 +2,6 @@ import { apiRequest } from "@/api/apiClient";
 import type { Collectible } from "@/types/collectible";
 
 export interface CreateCollectibleRequest {
-  userId: number;
   title: string;
   category: string;
   description: string;
@@ -14,22 +13,17 @@ export interface UpdateCollectibleRequest {
   title: string;
   category: string;
   description: string;
-  originalImageUrl: string;
-  generatedImageUrl: string;
 }
 
-export function getCollectiblesByUserId(
-  userId: number,
-): Promise<Collectible[]> {
-  return apiRequest<Collectible[]>(`/api/collectibles/user/${userId}`);
+export function getCollectibles(): Promise<Collectible[]> {
+  return apiRequest<Collectible[]>("/api/collectibles");
 }
 
-export function getCollectiblesByUserIdAndCategory(
-  userId: number,
+export function getCollectiblesByCategory(
   category: string,
 ): Promise<Collectible[]> {
   return apiRequest<Collectible[]>(
-    `/api/collectibles/user/${userId}/category/${encodeURIComponent(category)}`,
+    `/api/collectibles/category/${encodeURIComponent(category)}`,
   );
 }
 

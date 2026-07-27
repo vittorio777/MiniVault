@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
 
-import { register } from "@/api/authApi";
+import { register, type UserResponse } from "@/api/authApi";
 
 interface RegisterModalProps {
   show: boolean;
 
   onClose: () => void;
 
-  onRegisterSuccess: (userId: number, nickname: string) => void;
+  onRegisterSuccess: (user: UserResponse) => void;
 }
 
 export default function RegisterModal({
@@ -22,8 +22,8 @@ export default function RegisterModal({
 
   const [loading, setLoading] = useState(false);
 
-  const handleRegister = async () => {
-    if (!nickname || !email || !password) {
+  const handleRegister = async (): Promise<void> => {
+    if (!nickname.trim() || !email.trim() || !password) {
       alert("Please complete all fields.");
       return;
     }
@@ -31,13 +31,13 @@ export default function RegisterModal({
     try {
       setLoading(true);
 
-      const user = await register({
-        nickname,
-        email,
+      const response = await register({
+        nickname: nickname.trim(),
+        email: email.trim(),
         password,
       });
 
-      onRegisterSuccess(user.id, user.nickname);
+      onRegisterSuccess(response.user);
 
       setNickname("");
       setEmail("");
@@ -68,8 +68,14 @@ export default function RegisterModal({
 
             <Form.Control
               type="text"
+              autoComplete="username"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  void handleRegister();
+                }
+              }}
             />
           </Form.Group>
 
@@ -78,8 +84,14 @@ export default function RegisterModal({
 
             <Form.Control
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  void handleRegister();
+                }
+              }}
             />
           </Form.Group>
 
@@ -88,19 +100,25 @@ export default function RegisterModal({
 
             <Form.Control
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  void handleRegister();
+                }
+              }}
             />
           </Form.Group>
         </Form>
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
 
-        <Button onClick={handleRegister} disabled={loading}>
+        <Button onClick={() => void handleRegister()} disabled={loading}>
           {loading ? "Registering..." : "Register"}
         </Button>
       </Modal.Footer>

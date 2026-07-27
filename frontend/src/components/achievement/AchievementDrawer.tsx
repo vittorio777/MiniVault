@@ -1,43 +1,42 @@
 import { useEffect, useState } from "react";
 import { Button, Offcanvas, Spinner } from "react-bootstrap";
 
-import { getAchievementsByUserId } from "@/api/achievementsApi";
+import { getAchievements } from "@/api/achievementsApi";
 import type { Achievement } from "@/types/achievement";
 
 import AchievementItem from "./AchievementItem";
 
-interface AchievementDrawerProps {
-  userId: number | null;
-}
-
-export default function AchievementDrawer({ userId }: AchievementDrawerProps) {
+export default function AchievementDrawer() {
   const [show, setShow] = useState(false);
 
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+
   const [loading, setLoading] = useState(false);
 
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    if (!show || userId === null) {
+    if (!show) {
       return;
     }
 
-    loadAchievements();
-  }, [show, userId]);
+    void loadAchievements();
+  }, [show]);
 
-  async function loadAchievements() {
-    if (userId === null) {
-      return;
-    }
-
+  async function loadAchievements(): Promise<void> {
     try {
       setLoading(true);
+      setError("");
 
-      const data = await getAchievementsByUserId(userId);
+      const data = await getAchievements();
 
       setAchievements(data);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to load achievements.");
+    } catch (requestError) {
+      if (requestError instanceof Error) {
+        setError(requestError.message);
+      } else {
+        setError("Failed to load achievements.");
+      }
     } finally {
       setLoading(false);
     }
@@ -46,12 +45,8 @@ export default function AchievementDrawer({ userId }: AchievementDrawerProps) {
   return (
     <>
       <Button
-        style={{
-          position: "fixed",
-          top: 20,
-          left: 20,
-          zIndex: 1000,
-        }}
+        type="button"
+        variant="outline-primary"
         onClick={() => setShow(true)}
       >
         Achievements
@@ -63,21 +58,16 @@ export default function AchievementDrawer({ userId }: AchievementDrawerProps) {
         </Offcanvas.Header>
 
         <Offcanvas.Body>
-          {userId === null && <p>Please login first.</p>}
-
-          {userId !== null && loading && (
-            <div
-              style={{
-                textAlign: "center",
-                marginTop: "40px",
-              }}
-            >
-              <Spinner />
+          {loading && (
+            <div className="d-flex justify-content-center py-5">
+              <Spinner animation="border" />
             </div>
           )}
 
-          {userId !== null &&
-            !loading &&
+          {!loading && error && <p className="text-danger">{error}</p>}
+
+          {!loading &&
+            !error &&
             achievements.map((achievement) => (
               <AchievementItem
                 key={achievement.achievementId}
@@ -85,8 +75,8 @@ export default function AchievementDrawer({ userId }: AchievementDrawerProps) {
               />
             ))}
 
-          {userId !== null && !loading && achievements.length === 0 && (
-            <p>No achievements.</p>
+          {!loading && !error && achievements.length === 0 && (
+            <p className="text-secondary">No achievements yet.</p>
           )}
         </Offcanvas.Body>
       </Offcanvas>

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+
 using MiniVault.DTOs;
 using MiniVault.Services;
 
@@ -9,39 +10,75 @@ namespace MiniVault.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly UserService _userService;
+    private readonly JwtService _jwtService;
 
-    public UsersController(UserService userService)
+    public UsersController(
+        UserService userService,
+        JwtService jwtService)
     {
         _userService = userService;
+        _jwtService = jwtService;
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<UserResponse>> Register(
-        RegisterRequest request)
+    public async Task<ActionResult<AuthResponse>> Register(
+        [FromBody] RegisterRequest request)
     {
         try
         {
-            var response = await _userService.RegisterAsync(request);
+            var user =
+                await _userService.RegisterAsync(request);
+
+            var token = _jwtService.GenerateToken(
+                user.Id,
+                user.Email,
+                user.Nickname);
+
+            var response = new AuthResponse
+            {
+                Token = token,
+                User = user
+            };
+
             return Ok(response);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException exception)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new
+            {
+                message = exception.Message
+            });
         }
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<UserResponse>> Login(
-        LoginRequest request)
+    public async Task<ActionResult<AuthResponse>> Login(
+        [FromBody] LoginRequest request)
     {
         try
         {
-            var response = await _userService.LoginAsync(request);
+            var user =
+                await _userService.LoginAsync(request);
+
+            var token = _jwtService.GenerateToken(
+                user.Id,
+                user.Email,
+                user.Nickname);
+
+            var response = new AuthResponse
+            {
+                Token = token,
+                User = user
+            };
+
             return Ok(response);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException exception)
         {
-            return Unauthorized(ex.Message);
+            return Unauthorized(new
+            {
+                message = exception.Message
+            });
         }
     }
 }

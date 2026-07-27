@@ -1,12 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MiniVault.Services;
 using MiniVault.DTOs;
+using MiniVault.Extensions;
 using MiniVault.Models;
+using MiniVault.Services;
 
 namespace MiniVault.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class GenerationController : ControllerBase
 {
     private readonly GenerationService _generationService;
@@ -17,22 +20,36 @@ public class GenerationController : ControllerBase
     }
 
     [HttpPost("capture")]
-    public async Task<IActionResult> CaptureImage(IFormFile file)
+    public async Task<ActionResult<CollectibleResponse>> CaptureImage(
+        IFormFile file)
     {
         try
         {
-            var response = await _generationService.CaptureAsync(file);
+            var userId = User.GetUserId();
 
-            return Ok(ToResponse(response));
+            var collectible = await _generationService.CaptureAsync(
+                file,
+                userId
+            );
+
+            return Ok(ToResponse(collectible));
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
         }
-        ;
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
-    private static CollectibleResponse ToResponse(Collectible collectible)
+    private static CollectibleResponse ToResponse(
+        Collectible collectible)
     {
         return new CollectibleResponse
         {

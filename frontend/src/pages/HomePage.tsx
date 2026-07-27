@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { Button, Spinner } from "react-bootstrap";
+import { Alert, Button, Container, Spinner } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 
-import { getCollectiblesByUserId } from "@/api/collectiblesApi";
+import { getCollectibles } from "@/api/collectiblesApi";
+import {
+  getStoredUser,
+  getStoredToken,
+  logout,
+  type UserResponse,
+} from "@/api/authApi";
+
 import AchievementDrawer from "@/components/achievement/AchievementDrawer";
 import CategoryMenu from "@/components/CategoryMenu";
 import CollectionGrid from "@/components/collection/CollectionGrid";
@@ -9,30 +17,24 @@ import UploadButton from "@/components/UploadButton";
 import LoginModal from "@/components/user/LoginModal";
 import RegisterModal from "@/components/user/RegisterModal";
 import UserButton from "@/components/user/UserButton";
+
 import type { Collectible } from "@/types/collectible";
 
-function getStoredUserId(): number | null {
-  const storedUserId = localStorage.getItem("userId");
+function getInitialUser(): UserResponse | null {
+  const token = getStoredToken();
+  const user = getStoredUser();
 
-  if (!storedUserId) {
+  if (!token || !user) {
     return null;
   }
 
-  const parsedUserId = Number(storedUserId);
-
-  if (Number.isNaN(parsedUserId)) {
-    return null;
-  }
-
-  return parsedUserId;
+  return user;
 }
 
 export default function HomePage() {
-  const [userId, setUserId] = useState<number | null>(getStoredUserId);
+  const navigate = useNavigate();
 
-  const [nickname, setNickname] = useState<string>(
-    () => localStorage.getItem("nickname") ?? "",
-  );
+  const [user, setUser] = useState<UserResponse | null>(getInitialUser);
 
   const [collectibles, setCollectibles] = useState<Collectible[]>([]);
 
@@ -47,21 +49,21 @@ export default function HomePage() {
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    if (userId === null) {
+    if (!user) {
       setCollectibles([]);
       setSelectedCategory("all");
       return;
     }
 
-    void loadCollectibles(userId);
-  }, [userId]);
+    void loadCollectibles();
+  }, [user]);
 
-  async function loadCollectibles(currentUserId: number): Promise<void> {
+  async function loadCollectibles(): Promise<void> {
     try {
       setIsLoading(true);
       setError("");
 
-      const data = await getCollectiblesByUserId(currentUserId);
+      const data = await getCollectibles();
 
       setCollectibles(data);
     } catch (requestError) {
@@ -75,32 +77,22 @@ export default function HomePage() {
     }
   }
 
-  function handleAuthenticationSuccess(
-    authenticatedUserId: number,
-    authenticatedNickname: string,
-  ): void {
-    setUserId(authenticatedUserId);
-    setNickname(authenticatedNickname);
+  function handleAuthenticationSuccess(authenticatedUser: UserResponse): void {
+    setUser(authenticatedUser);
     setSelectedCategory("all");
     setError("");
-
-    localStorage.setItem("userId", authenticatedUserId.toString());
-
-    localStorage.setItem("nickname", authenticatedNickname);
 
     setShowLoginModal(false);
     setShowRegisterModal(false);
   }
 
   function handleLogout(): void {
-    setUserId(null);
-    setNickname("");
+    logout();
+
+    setUser(null);
     setCollectibles([]);
     setSelectedCategory("all");
     setError("");
-
-    localStorage.removeItem("userId");
-    localStorage.removeItem("nickname");
   }
 
   function handleUploadSuccess(collectible: Collectible): void {
@@ -114,7 +106,7 @@ export default function HomePage() {
   }
 
   function handleCollectibleClick(collectible: Collectible): void {
-    console.log("Selected collectible:", collectible);
+    navigate(`/collectibles/${collectible.id}`);
   }
 
   const categories = useMemo<string[]>(
@@ -122,8 +114,8 @@ export default function HomePage() {
       Array.from(
         new Set(
           collectibles
-            .map((collectible) => collectible.category)
-            .filter((category) => category.trim().length > 0),
+            .map((collectible) => collectible.category.trim())
+            .filter((category) => category.length > 0),
         ),
       ).sort(),
     [collectibles],
@@ -140,23 +132,33 @@ export default function HomePage() {
   }, [collectibles, selectedCategory]);
 
   return (
-    <main>
-      <UserButton
-        isLoggedIn={userId !== null}
-        nickname={nickname}
-        onLoginClick={() => setShowLoginModal(true)}
-        onLogoutClick={handleLogout}
-      />
+    <main className="min-vh-100 bg-light">
+      <header className="border-bottom bg-white">
+        <Container className="d-flex align-items-center justify-content-between gap-3 py-3">
+          <h1 className="m-0 fs-4">MiniVault</h1>
 
-      {userId === null && (
-        <Button
-          type="button"
-          variant="secondary"
-          onClick={() => setShowRegisterModal(true)}
-        >
-          Register
-        </Button>
-      )}
+          <div className="d-flex align-items-center gap-2">
+            {user && <AchievementDrawer />}
+
+            {!user && (
+              <Button
+                type="button"
+                variant="outline-secondary"
+                onClick={() => setShowRegisterModal(true)}
+              >
+                Register
+              </Button>
+            )}
+
+            <UserButton
+              isLoggedIn={user !== null}
+              nickname={user?.nickname ?? ""}
+              onLoginClick={() => setShowLoginModal(true)}
+              onLogoutClick={handleLogout}
+            />
+          </div>
+        </Container>
+      </header>
 
       <LoginModal
         show={showLoginModal}
@@ -170,32 +172,62 @@ export default function HomePage() {
         onRegisterSuccess={handleAuthenticationSuccess}
       />
 
-      <AchievementDrawer userId={userId} />
+      <Container className="py-4">
+        {!user ? (
+          <div className="py-5 text-center">
+            <h2 className="mb-3">Your miniature collection</h2>
 
-      {userId === null ? (
-        <p>Please log in or register to view your collection.</p>
-      ) : (
-        <>
-          <UploadButton onUploadSuccess={handleUploadSuccess} />
+            <p className="mb-4 text-secondary">
+              Log in or create an account to start building your collection.
+            </p>
 
-          <CategoryMenu
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-          />
+            <div className="d-flex justify-content-center gap-2">
+              <Button
+                type="button"
+                variant="primary"
+                onClick={() => setShowLoginModal(true)}
+              >
+                Log in
+              </Button>
 
-          {isLoading && <Spinner animation="border" />}
+              <Button
+                type="button"
+                variant="outline-primary"
+                onClick={() => setShowRegisterModal(true)}
+              >
+                Register
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+              <CategoryMenu
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
 
-          {!isLoading && error && <p>{error}</p>}
+              <UploadButton onUploadSuccess={handleUploadSuccess} />
+            </div>
 
-          {!isLoading && !error && (
-            <CollectionGrid
-              collectibles={filteredCollectibles}
-              onCollectibleClick={handleCollectibleClick}
-            />
-          )}
-        </>
-      )}
+            {isLoading && (
+              <div className="d-flex justify-content-center py-5">
+                <Spinner animation="border" />
+              </div>
+            )}
+
+            {!isLoading && error && <Alert variant="danger">{error}</Alert>}
+
+            {!isLoading && !error && (
+              <CollectionGrid
+                collectibles={filteredCollectibles}
+                onCollectibleClick={handleCollectibleClick}
+              />
+            )}
+          </>
+        )}
+      </Container>
     </main>
   );
 }

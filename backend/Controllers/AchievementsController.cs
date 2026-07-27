@@ -1,25 +1,31 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MiniVault.Services;
 using MiniVault.DTOs;
+using MiniVault.Extensions;
+using MiniVault.Services;
 
 namespace MiniVault.Controllers;
 
-
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class AchievementsController : ControllerBase
 {
     private readonly AchievementService _achievementService;
 
-    public AchievementsController(AchievementService achievementService)
+    public AchievementsController(
+        AchievementService achievementService)
     {
         _achievementService = achievementService;
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<ActionResult<List<UserAchievementResponse>>> GetByUserId(int userId)
+    [HttpGet]
+    public async Task<ActionResult<List<UserAchievementResponse>>> GetAchievements()
     {
-        var userAchievements = await _achievementService.GetByUserIdAsync(userId);
+        var userId = User.GetUserId();
+
+        var userAchievements =
+            await _achievementService.GetByUserIdAsync(userId);
 
         var response = userAchievements
             .Select(ToResponse)
@@ -28,7 +34,8 @@ public class AchievementsController : ControllerBase
         return Ok(response);
     }
 
-    private static UserAchievementResponse ToResponse(UserAchievementDetails userAchievement)
+    private static UserAchievementResponse ToResponse(
+        UserAchievementDetails userAchievement)
     {
         return new UserAchievementResponse
         {
@@ -39,8 +46,7 @@ public class AchievementsController : ControllerBase
             TargetValue = userAchievement.TargetValue,
             Progress = userAchievement.Progress,
             IsUnlocked = userAchievement.IsUnlocked,
-            UnlockedAt = userAchievement.UnlockedAt,
+            UnlockedAt = userAchievement.UnlockedAt
         };
     }
 }
-

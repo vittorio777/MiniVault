@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { Button, Form, Modal } from "react-bootstrap";
 
-import { login } from "@/api/authApi";
+import { login, type UserResponse } from "@/api/authApi";
 
 interface LoginModalProps {
   show: boolean;
 
   onClose: () => void;
 
-  onLoginSuccess: (userId: number, nickname: string) => void;
+  onLoginSuccess: (user: UserResponse) => void;
 }
 
 export default function LoginModal({
@@ -22,7 +22,7 @@ export default function LoginModal({
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!nickname || !password) {
+    if (!nickname.trim() || !password) {
       alert("Please enter your nickname and password.");
       return;
     }
@@ -30,12 +30,12 @@ export default function LoginModal({
     try {
       setLoading(true);
 
-      const user = await login({
-        nickname,
+      const response = await login({
+        nickname: nickname.trim(),
         password,
       });
 
-      onLoginSuccess(user.id, user.nickname);
+      onLoginSuccess(response.user);
 
       setNickname("");
       setPassword("");
@@ -65,8 +65,14 @@ export default function LoginModal({
 
             <Form.Control
               type="text"
+              autoComplete="username"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  void handleLogin();
+                }
+              }}
             />
           </Form.Group>
 
@@ -75,19 +81,25 @@ export default function LoginModal({
 
             <Form.Control
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  void handleLogin();
+                }
+              }}
             />
           </Form.Group>
         </Form>
       </Modal.Body>
 
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>
+        <Button variant="secondary" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
 
-        <Button onClick={handleLogin} disabled={loading}>
+        <Button onClick={() => void handleLogin()} disabled={loading}>
           {loading ? "Logging in..." : "Login"}
         </Button>
       </Modal.Footer>
