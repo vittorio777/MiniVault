@@ -42,3 +42,7 @@ out/
 
 # Docker
 docker-compose.override.yml
+
+# Tests
+**/bin/
+**/obj/
