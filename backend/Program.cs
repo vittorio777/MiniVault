@@ -89,19 +89,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        var allowedOrigins = builder.Configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>();
-
-        if (allowedOrigins is null || allowedOrigins.Length == 0)
-        {
-            throw new InvalidOperationException(
-                "At least one CORS allowed origin must be configured."
-            );
-        }
-
         policy
-            .WithOrigins(allowedOrigins)
+            .WithOrigins(
+                "http://localhost:5173",
+                "https://polite-coast-0b83c1900.7.azurestaticapps.net"
+            )
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
