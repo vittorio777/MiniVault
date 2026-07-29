@@ -1,0 +1,21 @@
+
+.upload-button{
+height:40px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+border:1px solid #dededb;border-radius:9px;color:#3f3a35;background:#fff;cursor:pointer;
+font-family:"Inter","Segoe UI",sans-serif;font-size:14px;font-weight:600;line-height:1.4;
+transition:all .16s ease;
+}
+.upload-button:hover:not(:disabled){
+background:#fafafa;border-color:#d4d4d1;transform:translateY(-1px);
+}
+.upload-button--disabled{
+color:#8f8a84;background:#f1f1ee;cursor:wait;opacity:.8;
+}
+.upload-button__spinner{
+width:15px;height:15px;flex-shrink:0;border:2px solid #d8d8d4;border-top-color:#9a7138;
+border-radius:50%;animation:upload-button-spin .7s linear infinite;
+}
+@keyframes upload-button-spin{to{transform:rotate(360deg)}}
+@media(max-width:520px){
+.upload-button{height:38px;padding:0 13px;font-size:13px;}
+}

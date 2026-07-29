@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import HomePage from "@/pages/HomePage";
 import ViewerPage from "@/pages/ViewerPage";
+import "@/App.css";
 
 export default function App() {
   return (

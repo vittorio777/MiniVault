@@ -7,10 +7,14 @@ namespace MiniVault.Services;
 public class CollectibleService
 {
     private readonly AppDbContext _context;
+    private readonly AchievementService _achievementService;
 
-    public CollectibleService(AppDbContext context)
+    public CollectibleService(
+        AppDbContext context,
+        AchievementService achievementService)
     {
         _context = context;
+        _achievementService = achievementService;
     }
 
     public async Task<List<Collectible>> GetByUserIdAsync(
@@ -62,12 +66,20 @@ public class CollectibleService
             return false;
         }
 
-        collectible.Title = updatedCollectible.Title;
-        collectible.Category = updatedCollectible.Category;
-        collectible.Description = updatedCollectible.Description;
+        collectible.Title =
+            updatedCollectible.Title.Trim();
+
+        collectible.Category =
+            updatedCollectible.Category.Trim();
+
+        collectible.Description =
+            updatedCollectible.Description.Trim();
+
         collectible.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        await UpdateAchievementsSafelyAsync(userId);
 
         return true;
     }
@@ -90,6 +102,8 @@ public class CollectibleService
 
         await _context.SaveChangesAsync();
 
+        await UpdateAchievementsSafelyAsync(userId);
+
         return collectible;
     }
 
@@ -104,7 +118,8 @@ public class CollectibleService
         }
 
         var userExists = await _context.Users
-            .AnyAsync(u => u.Id == collectible.UserId);
+            .AnyAsync(u =>
+                u.Id == collectible.UserId);
 
         if (!userExists)
         {
@@ -112,6 +127,15 @@ public class CollectibleService
                 "The authenticated user does not exist."
             );
         }
+
+        collectible.Title =
+            collectible.Title.Trim();
+
+        collectible.Category =
+            collectible.Category.Trim();
+
+        collectible.Description =
+            collectible.Description.Trim();
 
         var now = DateTime.UtcNow;
 
@@ -123,5 +147,22 @@ public class CollectibleService
         await _context.SaveChangesAsync();
 
         return collectible;
+    }
+
+    private async Task UpdateAchievementsSafelyAsync(
+        int userId)
+    {
+        try
+        {
+            await _achievementService
+                .UpdateAchievementsAsync(userId);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(
+                $"Failed to update achievements for user " +
+                $"{userId}: {exception.Message}"
+            );
+        }
     }
 }

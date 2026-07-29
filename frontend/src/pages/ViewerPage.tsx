@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Alert, Button, Container, Spinner } from "react-bootstrap";
 import { useNavigate, useParams } from "react-router-dom";
 
 import {
@@ -13,25 +12,26 @@ import DeleteCollectibleModal from "@/components/viewer/DeleteCollectibleModal";
 import EditCollectibleModal from "@/components/viewer/EditCollectibleModal";
 
 import type { Collectible } from "@/types/collectible";
+import { notifyAchievementsUpdated } from "@/utils/achievementEvents";
+
+import "./ViewerPage.css";
 
 export default function ViewerPage() {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const [collectible, setCollectible] = useState<Collectible | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState("");
 
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  const [error, setError] = useState<string>("");
-
-  const [showEditModal, setShowEditModal] = useState<boolean>(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
-
-  const [title, setTitle] = useState<string>("");
-  const [category, setCategory] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
 
   useEffect(() => {
     const collectibleId = Number(id);
@@ -51,14 +51,13 @@ export default function ViewerPage() {
       setError("");
 
       const data = await getCollectibleById(collectibleId);
-
       setCollectible(data);
     } catch (requestError) {
-      if (requestError instanceof Error) {
-        setError(requestError.message);
-      } else {
-        setError("Failed to load collectible.");
-      }
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to load collectible.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -77,19 +76,15 @@ export default function ViewerPage() {
   }
 
   function closeEditModal(): void {
-    if (isUpdating) {
-      return;
+    if (!isUpdating) {
+      setShowEditModal(false);
     }
-
-    setShowEditModal(false);
   }
 
   function closeDeleteModal(): void {
-    if (isDeleting) {
-      return;
+    if (!isDeleting) {
+      setShowDeleteModal(false);
     }
-
-    setShowDeleteModal(false);
   }
 
   async function handleUpdate(): Promise<void> {
@@ -129,13 +124,14 @@ export default function ViewerPage() {
         updatedAt: new Date().toISOString(),
       });
 
+      notifyAchievementsUpdated();
       setShowEditModal(false);
     } catch (requestError) {
-      if (requestError instanceof Error) {
-        setError(requestError.message);
-      } else {
-        setError("Failed to update collectible.");
-      }
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to update collectible.",
+      );
     } finally {
       setIsUpdating(false);
     }
@@ -151,17 +147,15 @@ export default function ViewerPage() {
       setError("");
 
       await deleteCollectible(collectible.id);
+      notifyAchievementsUpdated();
 
-      navigate("/", {
-        replace: true,
-      });
+      navigate("/", { replace: true });
     } catch (requestError) {
-      if (requestError instanceof Error) {
-        setError(requestError.message);
-      } else {
-        setError("Failed to delete collectible.");
-      }
-
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to delete collectible.",
+      );
       setShowDeleteModal(false);
     } finally {
       setIsDeleting(false);
@@ -170,28 +164,50 @@ export default function ViewerPage() {
 
   if (isLoading) {
     return (
-      <main className="min-vh-100 bg-light">
-        <Container className="d-flex justify-content-center py-5">
-          <Spinner animation="border" />
-        </Container>
+      <main className="viewer-page viewer-page--centered">
+        <div className="viewer-page__loading-card">
+          <span className="viewer-page__spinner" aria-hidden="true" />
+          <p className="viewer-page__loading-text">
+            Opening your collectible
+          </p>
+        </div>
       </main>
     );
   }
 
   if (error && !collectible) {
     return (
-      <main className="min-vh-100 bg-light">
-        <Container className="py-5">
-          <Alert variant="danger">{error}</Alert>
+      <main className="viewer-page viewer-page--centered">
+        <section className="viewer-page__state-card">
+          <div className="viewer-page__state-icon">
+            <ErrorIcon />
+          </div>
 
-          <Button
+          <h1 className="viewer-page__state-title">
+            We could not open this collectible
+          </h1>
+
+          <p className="viewer-page__state-description">
+            The collectible may have been removed, or the link may no longer be
+            valid.
+          </p>
+
+          <div className="viewer-page__error-alert" role="alert">
+            <span className="viewer-page__error-alert-icon">
+              <ErrorSmallIcon />
+            </span>
+            <span>{error}</span>
+          </div>
+
+          <button
             type="button"
-            variant="outline-secondary"
+            className="viewer-page__primary-button"
             onClick={() => navigate("/")}
           >
-            Back to home
-          </Button>
-        </Container>
+            <ArrowLeftIcon />
+            Back to collection
+          </button>
+        </section>
       </main>
     );
   }
@@ -201,38 +217,64 @@ export default function ViewerPage() {
   }
 
   return (
-    <main className="min-vh-100 bg-light">
-      <header className="border-bottom bg-white">
-        <Container className="d-flex align-items-center justify-content-between py-3">
-          <Button
+    <main className="viewer-page">
+      <header className="viewer-page__header">
+        <div className="viewer-page__header-inner">
+          <button
             type="button"
-            variant="outline-secondary"
+            className="viewer-page__back-button"
             onClick={() => navigate(-1)}
           >
-            ← Back
-          </Button>
+            <ArrowLeftIcon />
+            <span>Back</span>
+          </button>
 
-          <h1 className="m-0 fs-4">MiniVault</h1>
+          <button
+            type="button"
+            className="viewer-page__brand"
+            onClick={() => navigate("/")}
+            aria-label="Go to MiniVault home"
+          >
+            <span className="viewer-page__brand-mark">
+              <LogoIcon />
+            </span>
+            <strong className="viewer-page__brand-name">MiniVault</strong>
+          </button>
 
-          <div style={{ width: "84px" }} />
-        </Container>
+          <span className="viewer-page__header-spacer" aria-hidden="true" />
+        </div>
       </header>
 
-      <Container className="py-4">
-        <div className="mx-auto" style={{ maxWidth: "900px" }}>
-          {error && (
-            <Alert variant="danger" dismissible onClose={() => setError("")}>
-              {error}
-            </Alert>
-          )}
+      <div className="viewer-page__content">
+        {error && (
+          <div className="viewer-page__floating-alert" role="alert">
+            <span className="viewer-page__floating-alert-icon">
+              <ErrorSmallIcon />
+            </span>
 
-          <CollectibleDetails
-            collectible={collectible}
-            onEdit={openEditModal}
-            onDelete={() => setShowDeleteModal(true)}
-          />
-        </div>
-      </Container>
+            <span className="viewer-page__floating-alert-text">{error}</span>
+
+            <button
+              type="button"
+              className="viewer-page__alert-close-button"
+              aria-label="Dismiss error"
+              onClick={() => setError("")}
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        )}
+
+        <section className="viewer-page__details-shell">
+          <div className="viewer-page__details-content">
+            <CollectibleDetails
+              collectible={collectible}
+              onEdit={openEditModal}
+              onDelete={() => setShowDeleteModal(true)}
+            />
+          </div>
+        </section>
+      </div>
 
       <EditCollectibleModal
         show={showEditModal}
@@ -255,5 +297,117 @@ export default function ViewerPage() {
         onDelete={() => void handleDelete()}
       />
     </main>
+  );
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg
+      className="viewer-page__icon"
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M19 12H5M11 18L5 12L11 6"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LogoIcon() {
+  return (
+    <svg
+      className="viewer-page__icon"
+      width="36"
+      height="36"
+      viewBox="0 0 36 36"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path d="M18 5.5L28 11L18 16.5L8 11L18 5.5Z" fill="currentColor" />
+      <path
+        d="M7 12.8L16.8 18.2V30.3L12.9 28.1V20.5L9.8 18.8V26.4L7 24.8V12.8Z"
+        fill="currentColor"
+      />
+      <path
+        d="M29 12.8L19.2 18.2V30.3L23.1 28.1V20.5L26.2 18.8V26.4L29 24.8V12.8Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function ErrorIcon() {
+  return (
+    <svg
+      className="viewer-page__icon"
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M12 8V12.5M12 16H12.01"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.26 4.51L3.32 16.5C2.55 17.83 3.51 19.5 5.05 19.5H18.95C20.49 19.5 21.45 17.83 20.68 16.5L13.74 4.51C12.97 3.18 11.03 3.18 10.26 4.51Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ErrorSmallIcon() {
+  return (
+    <svg
+      className="viewer-page__icon"
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.7" />
+      <path
+        d="M12 8.5V12.5M12 15.5H12.01"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      className="viewer-page__icon"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M7 7L17 17M17 7L7 17"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

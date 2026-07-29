@@ -18,6 +18,8 @@ public class GenerationService
 {
     private readonly ImageService _imageService;
     private readonly CollectibleService _collectibleService;
+    private readonly AchievementService _achievementService;
+    private readonly BackgroundRemovalService _backgroundRemovalService;
     private readonly IWebHostEnvironment _environment;
     private readonly ChatClient _openaiClient;
     private readonly Client _googleClient;
@@ -25,11 +27,15 @@ public class GenerationService
     public GenerationService(
         ImageService imageService,
         CollectibleService collectibleService,
+        AchievementService achievementService,
+        BackgroundRemovalService backgroundRemovalService,
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
         _imageService = imageService;
         _collectibleService = collectibleService;
+        _achievementService = achievementService;
+        _backgroundRemovalService = backgroundRemovalService;
         _environment = environment;
 
         var openaiApiKey =
@@ -76,7 +82,9 @@ public class GenerationService
         }
 
         var originalImageUrl = string.Empty;
+        var rawGeneratedImageUrl = string.Empty;
         var generatedImageUrl = string.Empty;
+        var collectibleCreated = false;
 
         try
         {
@@ -86,21 +94,64 @@ public class GenerationService
             var collectible =
                 await GenerateInfoAsync(originalImageUrl);
 
-            generatedImageUrl =
+            rawGeneratedImageUrl =
                 await GenerateImageAsync(originalImageUrl);
+
+            generatedImageUrl =
+                await _backgroundRemovalService
+                    .RemoveBackgroundAsync(
+                        rawGeneratedImageUrl
+                    );
 
             collectible.UserId = userId;
             collectible.OriginalImageUrl = originalImageUrl;
             collectible.GeneratedImageUrl = generatedImageUrl;
 
-            return await _collectibleService.CreateAsync(
-                collectible
+            var createdCollectible =
+                await _collectibleService.CreateAsync(
+                    collectible
+                );
+
+            collectibleCreated = true;
+
+            DeleteLocalImageIfExists(
+                rawGeneratedImageUrl
             );
+
+            try
+            {
+                await _achievementService
+                    .UpdateAchievementsAfterCaptureAsync(
+                        userId,
+                        createdCollectible.Category
+                    );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"Failed to update achievements for user " +
+                    $"{userId}: {ex.Message}"
+                );
+            }
+
+            return createdCollectible;
         }
         catch
         {
-            DeleteLocalImageIfExists(generatedImageUrl);
-            DeleteLocalImageIfExists(originalImageUrl);
+            if (!collectibleCreated)
+            {
+                DeleteLocalImageIfExists(
+                    generatedImageUrl
+                );
+
+                DeleteLocalImageIfExists(
+                    rawGeneratedImageUrl
+                );
+
+                DeleteLocalImageIfExists(
+                    originalImageUrl
+                );
+            }
 
             throw;
         }
@@ -287,6 +338,7 @@ public class GenerationService
             "Soft warm studio lighting, subtle shadows and shallow depth of field. " +
             "Treat all text, logos, watermarks and UI elements in the reference image as irrelevant artifacts. " +
             "Exclude them completely from the generated collectible.";
+
 
         var response =
             await _googleClient.Models.GenerateContentAsync(

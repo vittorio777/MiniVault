@@ -1,7 +1,9 @@
-import { Button } from "react-bootstrap";
+import { useRef, useState, type PointerEvent } from "react";
 
 import type { Collectible } from "@/types/collectible";
 import { getImageUrl } from "@/utils/imageUrl";
+
+import "./CollectibleDetails.css";
 
 interface CollectibleDetailsProps {
   collectible: Collectible;
@@ -14,47 +16,217 @@ export default function CollectibleDetails({
   onEdit,
   onDelete,
 }: CollectibleDetailsProps) {
+  const showcaseRef = useRef<HTMLDivElement>(null);
+  const lensRef = useRef<HTMLDivElement>(null);
+
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isZoomEnabled, setIsZoomEnabled] = useState(false);
+
+  const imageUrl = getImageUrl(collectible.generatedImageUrl);
+
+  const addedDate = new Date(collectible.createdAt).toLocaleDateString(
+    "en-NZ",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    },
+  );
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>): void {
+    if (event.pointerType === "touch") {
+      return;
+    }
+
+    const showcase = showcaseRef.current;
+    const lens = lensRef.current;
+
+    if (!showcase) {
+      return;
+    }
+
+    const rect = showcase.getBoundingClientRect();
+
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+
+    const xRatio = pointerX / rect.width;
+    const yRatio = pointerY / rect.height;
+
+    const rotateY = (xRatio - 0.5) * 5;
+    const rotateX = (0.5 - yRatio) * 3;
+
+    showcase.style.transform = `
+    perspective(1000px)
+    rotateX(${rotateX}deg)
+    rotateY(${rotateY}deg)
+  `;
+
+    if (!lens || !isImageLoaded || !isZoomEnabled) {
+      if (lens) {
+        lens.style.opacity = "0";
+      }
+
+      return;
+    }
+
+    const lensSize = 220;
+
+    let lensX = pointerX - lensSize / 2;
+    let lensY = pointerY - lensSize / 2;
+
+    lensX = Math.max(0, Math.min(lensX, rect.width - lensSize));
+    lensY = Math.max(0, Math.min(lensY, rect.height - lensSize));
+
+    lens.style.left = `${lensX}px`;
+    lens.style.top = `${lensY}px`;
+
+    lens.style.backgroundPosition = `${xRatio * 100}% ${yRatio * 100}%`;
+
+    lens.style.opacity = "1";
+  }
+
+  function resetPointerEffect(): void {
+    const showcase = showcaseRef.current;
+    const lens = lensRef.current;
+
+    if (showcase) {
+      showcase.style.transform =
+        "perspective(1000px) rotateX(0deg) rotateY(0deg)";
+    }
+
+    if (lens) {
+      lens.style.opacity = "0";
+    }
+  }
+
   return (
-    <>
-      <div className="overflow-hidden rounded bg-white shadow-sm">
+    <section className="collectible-details-layout">
+      <div
+        ref={showcaseRef}
+        className={`collectible-details__showcase ${
+          isZoomEnabled ? "collectible-details__showcase--zoom-enabled" : ""
+        }`}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={resetPointerEffect}
+        onPointerCancel={resetPointerEffect}
+      >
+        {!isImageLoaded && (
+          <div className="collectible-details__image-placeholder">
+            <span className="collectible-details__loading-dot" />
+            Loading image
+          </div>
+        )}
+
         <img
-          src={getImageUrl(collectible.generatedImageUrl)}
+          src={imageUrl}
           alt={collectible.title}
-          className="d-block w-100"
-          style={{
-            maxHeight: "620px",
-            objectFit: "contain",
-          }}
+          draggable={false}
+          onLoad={() => setIsImageLoaded(true)}
+          className={`collectible-details__image ${
+            isImageLoaded ? "collectible-details__image--loaded" : ""
+          }`}
         />
+
+        <div
+          ref={lensRef}
+          aria-hidden="true"
+          className="collectible-details__magnifier"
+          style={{ backgroundImage: `url("${imageUrl}")` }}
+        />
+
+        <button
+          type="button"
+          className={`collectible-details__zoom-button ${
+            isZoomEnabled ? "collectible-details__zoom-button--active" : ""
+          }`}
+          aria-pressed={isZoomEnabled}
+          onClick={() => {
+            setIsZoomEnabled((currentValue) => {
+              const nextValue = !currentValue;
+
+              if (!nextValue && lensRef.current) {
+                lensRef.current.style.opacity = "0";
+              }
+
+              return nextValue;
+            });
+          }}
+        >
+          <MagnifierIcon />
+          {isZoomEnabled ? "Zoom on" : "Zoom off"}
+        </button>
       </div>
 
-      <div className="mt-4 rounded bg-white p-4 shadow-sm">
-        <div className="mb-3 d-flex flex-column flex-md-row align-items-md-start justify-content-between gap-3">
-          <div>
-            <h2 className="mb-2">{collectible.title}</h2>
-
-            <span className="text-secondary">{collectible.category}</span>
-          </div>
-
-          <div className="d-flex gap-2">
-            <Button type="button" variant="outline-primary" onClick={onEdit}>
-              Edit
-            </Button>
-
-            <Button type="button" variant="outline-danger" onClick={onDelete}>
-              Delete
-            </Button>
-          </div>
+      <aside className="collectible-details__info">
+        <div className="collectible-details__meta-row">
+          <span className="collectible-details__category">
+            {collectible.category.toUpperCase()}
+          </span>
         </div>
 
-        <p className="mb-3 text-secondary">
-          {collectible.description || "No description."}
+        <h1 className="collectible-details__title">{collectible.title}</h1>
+
+        <p className="collectible-details__description">
+          {collectible.description || "No description has been added yet."}
         </p>
 
-        <small className="text-muted">
-          Created {new Date(collectible.createdAt).toLocaleString()}
-        </small>
-      </div>
-    </>
+        <p className="collectible-details__added-text">Added · {addedDate}</p>
+
+        <div className="collectible-details__actions">
+          <button
+            type="button"
+            className="collectible-details__edit-button"
+            onClick={onEdit}
+          >
+            Edit collectible
+          </button>
+
+          <button
+            type="button"
+            className="collectible-details__delete-button"
+            onClick={onDelete}
+          >
+            Delete
+          </button>
+        </div>
+      </aside>
+    </section>
   );
 }
+
+function MagnifierIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className="collectible-details__magnifier-icon"
+    >
+      <circle
+        cx="10.5"
+        cy="10.5"
+        r="5.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+
+      <path
+        d="M15 15L20 20"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+
+      <path
+        d="M10.5 8V13M8 10.5H13"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+

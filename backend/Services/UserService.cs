@@ -35,41 +35,51 @@ public class UserService
         if (string.IsNullOrWhiteSpace(nickname))
         {
             throw new InvalidOperationException(
-                "Nickname is required.");
+                "Nickname is required."
+            );
         }
 
         if (string.IsNullOrWhiteSpace(email))
         {
             throw new InvalidOperationException(
-                "Email is required.");
+                "Email is required."
+            );
         }
 
         if (string.IsNullOrWhiteSpace(request.Password))
         {
             throw new InvalidOperationException(
-                "Password is required.");
+                "Password is required."
+            );
         }
 
         var nicknameExists = await _context.Users
-            .AnyAsync(user => user.Nickname == nickname);
+            .AnyAsync(user =>
+                user.Nickname == nickname
+            );
 
         if (nicknameExists)
         {
             throw new InvalidOperationException(
-                "Nickname already registered.");
+                "Nickname already registered."
+            );
         }
 
         var emailExists = await _context.Users
-            .AnyAsync(user => user.Email == email);
+            .AnyAsync(user =>
+                user.Email == email
+            );
 
         if (emailExists)
         {
             throw new InvalidOperationException(
-                "Email already registered.");
+                "Email already registered."
+            );
         }
 
         await using var transaction =
-            await _context.Database.BeginTransactionAsync();
+            await _context.Database
+                .BeginTransactionAsync();
 
         try
         {
@@ -77,7 +87,8 @@ public class UserService
             {
                 Nickname = nickname,
                 Email = email,
-                PasswordHash = HashPassword(request.Password),
+                PasswordHash =
+                    HashPassword(request.Password),
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -85,15 +96,10 @@ public class UserService
 
             await _context.SaveChangesAsync();
 
-            var initialized =
-                await _achievementService
-                    .InitializeUserAchievementsAsync(user.Id);
-
-            if (!initialized)
-            {
-                throw new InvalidOperationException(
-                    "Failed to initialize user achievements.");
-            }
+            await _achievementService
+                .InitializeUserAchievementsAsync(
+                    user.Id
+                );
 
             await transaction.CommitAsync();
 
@@ -114,23 +120,27 @@ public class UserService
         var user = await _context.Users
             .FirstOrDefaultAsync(
                 storedUser =>
-                    storedUser.Nickname == nickname);
+                    storedUser.Nickname == nickname
+            );
 
         if (user is null)
         {
             throw new InvalidOperationException(
-                "Invalid nickname or password.");
+                "Invalid nickname or password."
+            );
         }
 
         var passwordIsValid = VerifyPassword(
             request.Password,
             user.PasswordHash,
-            out var usesLegacyHash);
+            out var usesLegacyHash
+        );
 
         if (!passwordIsValid)
         {
             throw new InvalidOperationException(
-                "Invalid nickname or password.");
+                "Invalid nickname or password."
+            );
         }
 
         if (usesLegacyHash)
@@ -141,10 +151,16 @@ public class UserService
             await _context.SaveChangesAsync();
         }
 
+        await _achievementService
+            .InitializeUserAchievementsAsync(
+                user.Id
+            );
+
         return ToResponse(user);
     }
 
-    private static UserResponse ToResponse(User user)
+    private static UserResponse ToResponse(
+        User user)
     {
         return new UserResponse
         {
@@ -154,23 +170,30 @@ public class UserService
         };
     }
 
-    private static string HashPassword(string password)
+    private static string HashPassword(
+        string password)
     {
-        var salt = RandomNumberGenerator.GetBytes(SaltSize);
+        var salt =
+            RandomNumberGenerator.GetBytes(
+                SaltSize
+            );
 
-        var hash = Rfc2898DeriveBytes.Pbkdf2(
-            password,
-            salt,
-            Iterations,
-            HashAlgorithmName.SHA256,
-            HashSize);
+        var hash =
+            Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                salt,
+                Iterations,
+                HashAlgorithmName.SHA256,
+                HashSize
+            );
 
         return string.Join(
             ".",
             "PBKDF2",
             Iterations,
             Convert.ToBase64String(salt),
-            Convert.ToBase64String(hash));
+            Convert.ToBase64String(hash)
+        );
     }
 
     private static bool VerifyPassword(
@@ -186,14 +209,16 @@ public class UserService
         {
             return VerifyPbkdf2Password(
                 password,
-                storedHash);
+                storedHash
+            );
         }
 
         usesLegacyHash = true;
 
         return VerifyLegacyPassword(
             password,
-            storedHash);
+            storedHash
+        );
     }
 
     private static bool VerifyPbkdf2Password(
@@ -202,7 +227,8 @@ public class UserService
     {
         try
         {
-            var parts = storedHash.Split('.');
+            var parts =
+                storedHash.Split('.');
 
             if (parts.Length != 4)
             {
@@ -217,10 +243,14 @@ public class UserService
             }
 
             var salt =
-                Convert.FromBase64String(parts[2]);
+                Convert.FromBase64String(
+                    parts[2]
+                );
 
             var expectedHash =
-                Convert.FromBase64String(parts[3]);
+                Convert.FromBase64String(
+                    parts[3]
+                );
 
             var actualHash =
                 Rfc2898DeriveBytes.Pbkdf2(
@@ -228,14 +258,16 @@ public class UserService
                     salt,
                     iterations,
                     HashAlgorithmName.SHA256,
-                    expectedHash.Length);
+                    expectedHash.Length
+                );
 
-            return CryptographicOperations.FixedTimeEquals(
-                actualHash,
-                expectedHash);
+            return CryptographicOperations
+                .FixedTimeEquals(
+                    actualHash,
+                    expectedHash
+                );
         }
-        catch (
-            FormatException)
+        catch (FormatException)
         {
             return false;
         }
@@ -245,27 +277,40 @@ public class UserService
         string password,
         string storedHash)
     {
-        using var sha256 = SHA256.Create();
+        using var sha256 =
+            SHA256.Create();
 
         var passwordBytes =
-            Encoding.UTF8.GetBytes(password);
+            Encoding.UTF8.GetBytes(
+                password
+            );
 
         var hashBytes =
-            sha256.ComputeHash(passwordBytes);
+            sha256.ComputeHash(
+                passwordBytes
+            );
 
         var legacyHash =
-            Convert.ToBase64String(hashBytes);
+            Convert.ToBase64String(
+                hashBytes
+            );
 
         var actualBytes =
-            Encoding.UTF8.GetBytes(legacyHash);
+            Encoding.UTF8.GetBytes(
+                legacyHash
+            );
 
         var expectedBytes =
-            Encoding.UTF8.GetBytes(storedHash);
+            Encoding.UTF8.GetBytes(
+                storedHash
+            );
 
         return actualBytes.Length ==
                expectedBytes.Length &&
-               CryptographicOperations.FixedTimeEquals(
-                   actualBytes,
-                   expectedBytes);
+               CryptographicOperations
+                   .FixedTimeEquals(
+                       actualBytes,
+                       expectedBytes
+                   );
     }
 }

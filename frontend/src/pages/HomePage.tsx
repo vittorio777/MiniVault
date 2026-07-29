@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Container, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 import { getCollectibles } from "@/api/collectiblesApi";
 import {
-  getStoredUser,
   getStoredToken,
+  getStoredUser,
   logout,
   type UserResponse,
 } from "@/api/authApi";
@@ -19,6 +18,8 @@ import RegisterModal from "@/components/user/RegisterModal";
 import UserButton from "@/components/user/UserButton";
 
 import type { Collectible } from "@/types/collectible";
+
+import "./HomePage.css";
 
 function getInitialUser(): UserResponse | null {
   const token = getStoredToken();
@@ -35,18 +36,14 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState<UserResponse | null>(getInitialUser);
-
   const [collectibles, setCollectibles] = useState<Collectible[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
 
-  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
-
-  const [showRegisterModal, setShowRegisterModal] = useState<boolean>(false);
-
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -67,11 +64,11 @@ export default function HomePage() {
 
       setCollectibles(data);
     } catch (requestError) {
-      if (requestError instanceof Error) {
-        setError(requestError.message);
-      } else {
-        setError("Failed to load collectibles.");
-      }
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Failed to load collectibles.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -109,19 +106,19 @@ export default function HomePage() {
     navigate(`/collectibles/${collectible.id}`);
   }
 
-  const categories = useMemo<string[]>(
+  const categories = useMemo(
     () =>
       Array.from(
         new Set(
           collectibles
             .map((collectible) => collectible.category.trim())
-            .filter((category) => category.length > 0),
+            .filter(Boolean),
         ),
-      ).sort(),
+      ).sort((first, second) => first.localeCompare(second)),
     [collectibles],
   );
 
-  const filteredCollectibles = useMemo<Collectible[]>(() => {
+  const filteredCollectibles = useMemo(() => {
     if (selectedCategory === "all") {
       return collectibles;
     }
@@ -132,23 +129,45 @@ export default function HomePage() {
   }, [collectibles, selectedCategory]);
 
   return (
-    <main className="min-vh-100 bg-light">
-      <header className="border-bottom bg-white">
-        <Container className="d-flex align-items-center justify-content-between gap-3 py-3">
-          <h1 className="m-0 fs-4">MiniVault</h1>
-
-          <div className="d-flex align-items-center gap-2">
-            {user && <AchievementDrawer />}
-
-            {!user && (
-              <Button
-                type="button"
-                variant="outline-secondary"
-                onClick={() => setShowRegisterModal(true)}
+    <main className="home-page">
+      <header className="home-page__header">
+        <div className="home-page__header-inner">
+          <button
+            type="button"
+            aria-label="Show all collectibles"
+            onClick={() => setSelectedCategory("all")}
+            className="home-page__brand"
+          >
+            <span className="home-page__logo" aria-hidden="true">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 36 36"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
               >
-                Register
-              </Button>
-            )}
+                <path
+                  d="M18 5.5L28 11L18 16.5L8 11L18 5.5Z"
+                  fill="currentColor"
+                />
+
+                <path
+                  d="M7 12.8L16.8 18.2V30.3L12.9 28.1V20.5L9.8 18.8V26.4L7 24.8V12.8Z"
+                  fill="currentColor"
+                />
+
+                <path
+                  d="M29 12.8L19.2 18.2V30.3L23.1 28.1V20.5L26.2 18.8V26.4L29 24.8V12.8Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </span>
+
+            <span className="home-page__brand-name">MiniVault</span>
+          </button>
+
+          <div className="home-page__header-actions">
+            {user && <AchievementDrawer />}
 
             <UserButton
               isLoggedIn={user !== null}
@@ -157,7 +176,7 @@ export default function HomePage() {
               onLogoutClick={handleLogout}
             />
           </div>
-        </Container>
+        </div>
       </header>
 
       <LoginModal
@@ -172,62 +191,97 @@ export default function HomePage() {
         onRegisterSuccess={handleAuthenticationSuccess}
       />
 
-      <Container className="py-4">
-        {!user ? (
-          <div className="py-5 text-center">
-            <h2 className="mb-3">Your miniature collection</h2>
+      {!user ? (
+        <section className="home-page__guest-section">
+          <div className="home-page__guest-content">
+            <h1 className="home-page__guest-title">Turn anything into a miniature.</h1>
 
-            <p className="mb-4 text-secondary">
-              Log in or create an account to start building your collection.
+            <p className="home-page__guest-description">
+              Create, organize, and revisit your personal collection in one
+              place.
             </p>
 
-            <div className="d-flex justify-content-center gap-2">
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => setShowLoginModal(true)}
-              >
-                Log in
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline-primary"
-                onClick={() => setShowRegisterModal(true)}
-              >
-                Register
-              </Button>
-            </div>
+            <button
+              type="button"
+              className="home-page__secondary-button"
+              onClick={() => setShowRegisterModal(true)}
+            >
+              Create an account
+            </button>
           </div>
-        ) : (
-          <>
-            <div className="mb-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-              <CategoryMenu
-                categories={categories}
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-              />
+        </section>
+      ) : (
+        <section className="home-page__collection-section">
+          <aside className="home-page__sidebar">
+            <CategoryMenu
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+            />
+          </aside>
+
+          <div className="home-page__collection-content">
+            <header className="home-page__collection-header">
+              <div>
+                <h1 className="home-page__collection-title">My Collection</h1>
+
+                <p className="home-page__collection-summary">
+                  <strong>{collectibles.length}</strong>{" "}
+                  {collectibles.length === 1 ? "item" : "items"}
+                </p>
+              </div>
 
               <UploadButton onUploadSuccess={handleUploadSuccess} />
+            </header>
+
+            <div
+              className="home-page__gallery"
+              aria-live="polite"
+              aria-busy={isLoading}
+            >
+              {isLoading && (
+                <div className="home-page__status-box">
+                  <span className="home-page__spinner" aria-hidden="true" />
+
+                  <p className="home-page__status-text">Opening your vault</p>
+                </div>
+              )}
+
+              {!isLoading && error && (
+                <div className="home-page__error-box" role="alert">
+                  <div>
+                    <strong className="home-page__error-title">
+                      Unable to open your vault
+                    </strong>
+
+                    <p className="home-page__error-message">{error}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => void loadCollectibles()}
+                    className="home-page__retry-button"
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+
+              {!isLoading && !error && (
+                <CollectionGrid
+                  collectibles={filteredCollectibles}
+                  onCollectibleClick={handleCollectibleClick}
+                />
+              )}
             </div>
 
-            {isLoading && (
-              <div className="d-flex justify-content-center py-5">
-                <Spinner animation="border" />
-              </div>
+            {!isLoading && !error && filteredCollectibles.length > 0 && (
+              <footer className="home-page__footer">MiniVault © 2026</footer>
             )}
-
-            {!isLoading && error && <Alert variant="danger">{error}</Alert>}
-
-            {!isLoading && !error && (
-              <CollectionGrid
-                collectibles={filteredCollectibles}
-                onCollectibleClick={handleCollectibleClick}
-              />
-            )}
-          </>
-        )}
-      </Container>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
+

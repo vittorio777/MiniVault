@@ -1,0 +1,304 @@
+.collectible-details-layout {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  padding: clamp(18px, 2.5vh, 28px);
+  overflow: hidden;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.collectible-details__showcase {
+  min-height: 460px;
+  padding: 32px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #e8e8e5;
+  border-radius: 16px;
+  background: #f1f1ed;
+  cursor: default;
+  transition: transform 180ms ease;
+  transform-style: preserve-3d;
+}
+
+.collectible-details__showcase--zoom-enabled {
+  cursor: zoom-in;
+}
+
+.collectible-details__image {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  max-height: 430px;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 24px rgba(0, 0, 0, 0.13));
+  opacity: 0;
+  transition: opacity 240ms ease;
+  user-select: none;
+}
+
+.collectible-details__image--loaded {
+  opacity: 1;
+}
+
+.collectible-details__magnifier {
+  width: 280px;
+  height: 280px;
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  background-color: #f1f1ed;
+  background-repeat: no-repeat;
+  background-size: 350%;
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.collectible-details__zoom-button {
+  min-height: 34px;
+  padding: 0 13px;
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  color: #888888;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.collectible-details__zoom-button:hover {
+  transform: translateY(-1px);
+}
+
+.collectible-details__zoom-button--active {
+  color: #333333;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.collectible-details__magnifier-icon {
+  display: block;
+  pointer-events: none;
+}
+
+.collectible-details__image-placeholder {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #777777;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.collectible-details__loading-dot {
+  width: 7px;
+  height: 7px;
+  display: block;
+  border-radius: 50%;
+  background: #9a7138;
+  animation: collectible-loading-pulse 900ms ease-in-out infinite;
+}
+
+.collectible-details__info {
+  min-width: 0;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  transform: translateY(-28px);
+}
+
+.collectible-details__meta-row {
+  width: 100%;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.collectible-details__category {
+  min-height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #dededb;
+  border-radius: 8px;
+  color: #555555;
+  background: #f7f7f5;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.collectible-details__title {
+  max-width: 520px;
+  margin: 0;
+  color: #202020;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(32px, 3.8vw, 46px);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+.collectible-details__description {
+  max-width: 500px;
+  margin: 22px 0 0;
+  color: #666666;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.collectible-details__added-text {
+  margin: 34px 0 0;
+  color: #a0a0a0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.collectible-details__actions {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 17px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  border-top: 1px solid #eeeeeb;
+}
+
+.collectible-details__edit-button,
+.collectible-details__delete-button {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 160ms ease;
+}
+
+.collectible-details__edit-button {
+  color: #8c8c8c;
+}
+
+.collectible-details__edit-button:hover {
+  color: #333333;
+}
+
+.collectible-details__delete-button {
+  color: #a2a2a2;
+}
+
+.collectible-details__delete-button:hover {
+  color: #a34f45;
+}
+
+@keyframes collectible-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 820px) {
+  .collectible-details-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 20px;
+    overflow: visible;
+  }
+
+  .collectible-details__showcase {
+    min-height: 380px;
+  }
+
+  .collectible-details__info {
+    transform: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .collectible-details-layout {
+    gap: 24px;
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .collectible-details__showcase {
+    min-height: 310px;
+    padding: 18px;
+    border-radius: 14px;
+  }
+
+  .collectible-details__image {
+    max-height: 300px;
+  }
+
+  .collectible-details__magnifier {
+    display: none;
+  }
+
+  .collectible-details__zoom-button {
+    display: none;
+  }
+
+  .collectible-details__meta-row {
+    margin-bottom: 17px;
+  }
+
+  .collectible-details__title {
+    font-size: clamp(28px, 10vw, 38px);
+  }
+
+  .collectible-details__description {
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .collectible-details__added-text {
+    margin-top: 24px;
+  }
+
+  .collectible-details__actions {
+    margin-top: 20px;
+  }
+}

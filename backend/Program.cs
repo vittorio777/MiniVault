@@ -2,20 +2,32 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using MiniVault.Api.Settings;
 using MiniVault.Data;
 using MiniVault.Services;
-using MiniVault.Api.Settings;
+using MiniVault.Services.Storage;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<CollectibleService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<ImageService>();
 builder.Services.AddScoped<GenerationService>();
+builder.Services.AddHttpClient<BackgroundRemovalService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(2);
+});
 builder.Services.AddScoped<AchievementService>();
 builder.Services.AddScoped<JwtService>();
+
+builder.Services.AddScoped<
+    IImageStorageService,
+    LocalImageStorageService
+>();
 
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection(JwtSettings.SectionName)
@@ -85,6 +97,12 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
 app.UseCors("AllowFrontend");
 
 app.UseStaticFiles();
@@ -94,6 +112,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapGet("/api/health", () => "Mine+ API Running");
+app.MapGet("/api/health", () => "MiniVault API Running");
 
 app.Run();

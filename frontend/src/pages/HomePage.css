@@ -1,0 +1,360 @@
+.home-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  color: #2f281f;
+  background: #f4f4f2;
+  font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.home-page__header {
+  height: 96px;
+  padding: 0 24px;
+}
+
+.home-page__header-inner {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-page__brand {
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  color: #9a7138;
+  background: transparent;
+  cursor: pointer;
+}
+
+.home-page__logo {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.home-page__brand-name {
+  color: #2f281f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+.home-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.home-page__collection-section {
+  width: calc(100% - 48px);
+  min-height: calc(100vh - 96px);
+  margin: 0 auto;
+  padding: 12px 0 36px;
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  column-gap: 48px;
+  align-items: start;
+}
+
+.home-page__sidebar {
+  padding-top: 10px;
+  position: sticky;
+  top: 32px;
+  z-index: 10;
+  min-width: 0;
+}
+
+.home-page__collection-content {
+  min-width: 0;
+  min-height: calc(100vh - 144px);
+  display: flex;
+  flex-direction: column;
+}
+
+.home-page__collection-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 32px;
+}
+
+.home-page__collection-title {
+  margin: 0;
+  color: #232323;
+  font-size: 36px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -1px;
+}
+
+.home-page__collection-summary {
+  margin: 5px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #8a8177;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.home-page__gallery {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.home-page__status-box {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #8a857f;
+}
+
+.home-page__spinner {
+  width: 28px;
+  height: 28px;
+  display: block;
+  border: 2px solid #e2e2df;
+  border-top-color: #9a7138;
+  border-radius: 50%;
+  animation: home-page-spin 700ms linear infinite;
+}
+
+.home-page__status-text {
+  margin: 0;
+  font-size: 13px;
+}
+
+.home-page__error-box {
+  max-width: 520px;
+  margin: 70px auto 0;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  border: 1px solid #e5d9d4;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.home-page__error-title {
+  color: #6d4640;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.home-page__error-message {
+  margin: 6px 0 0;
+  color: #94736e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.home-page__retry-button {
+  min-height: 36px;
+  padding: 0 14px;
+  flex-shrink: 0;
+  border: 1px solid #dededb;
+  border-radius: 8px;
+  color: #4d4944;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.home-page__footer {
+  margin-top: auto;
+  padding: 32px 0 8px;
+  color: #aaa59f;
+  font-size: 11px;
+  text-align: center;
+}
+
+.home-page__guest-section {
+  min-height: calc(100vh - 96px);
+  padding: 80px 24px;
+  display: grid;
+  place-items: center;
+}
+
+.home-page__guest-content {
+  width: min(720px, 100%);
+  text-align: center;
+}
+
+.home-page__guest-title {
+  margin: 0;
+  color: #232323;
+  font-size: 58px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -2px;
+}
+
+.home-page__guest-description {
+  max-width: 540px;
+  margin: 22px auto 0;
+  color: #77736e;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.home-page__secondary-button {
+  height: 46px;
+  margin-top: 34px;
+  padding: 0 20px;
+  border: 1px solid #ddddda;
+  border-radius: 10px;
+  color: #333333;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@keyframes home-page-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .home-page__collection-section {
+    grid-template-columns: 140px minmax(0, 1fr);
+    column-gap: 28px;
+  }
+}
+
+@media (max-width: 800px) {
+  .home-page__header {
+    height: 82px;
+    padding: 0 18px;
+  }
+
+  .home-page__brand {
+    gap: 8px;
+  }
+
+  .home-page__logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .home-page__brand-name {
+    font-size: 20px;
+  }
+
+  .home-page__header-actions {
+    gap: 10px;
+  }
+
+  .home-page__collection-section {
+    width: calc(100% - 36px);
+    min-height: calc(100vh - 82px);
+    padding: 8px 0 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .home-page__sidebar {
+    width: 100%;
+    padding-top: 0;
+    position: static;
+  }
+
+  .home-page__collection-content {
+    width: 100%;
+    min-height: calc(100vh - 130px);
+  }
+
+  .home-page__collection-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+  }
+
+  .home-page__collection-title {
+    font-size: 32px;
+    letter-spacing: -0.8px;
+  }
+
+  .home-page__error-box {
+    margin-top: 42px;
+  }
+
+  .home-page__guest-section {
+    min-height: calc(100vh - 82px);
+    padding: 60px 20px;
+  }
+
+  .home-page__guest-title {
+    font-size: 46px;
+  }
+}
+
+@media (max-width: 520px) {
+  .home-page__header {
+    height: 76px;
+    padding: 0 14px;
+  }
+
+  .home-page__brand-name {
+    font-size: 18px;
+  }
+
+  .home-page__collection-section {
+    width: calc(100% - 28px);
+    min-height: calc(100vh - 76px);
+    gap: 16px;
+  }
+
+  .home-page__collection-header {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  .home-page__collection-header > :last-child {
+    justify-self: start;
+  }
+
+  .home-page__collection-title {
+    font-size: 30px;
+  }
+
+  .home-page__error-box {
+    padding: 18px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .home-page__retry-button {
+    width: 100%;
+  }
+
+  .home-page__guest-title {
+    font-size: 38px;
+    letter-spacing: -1.4px;
+  }
+
+  .home-page__guest-description {
+    font-size: 15px;
+  }
+}
