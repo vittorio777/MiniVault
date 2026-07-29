@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using MiniVault.Data;
 using MiniVault.Models;
 
@@ -8,23 +9,42 @@ public class CollectibleService
 {
     private readonly AppDbContext _context;
     private readonly AchievementService _achievementService;
+    private readonly IMemoryCache _cache;
 
     public CollectibleService(
         AppDbContext context,
-        AchievementService achievementService)
+        AchievementService achievementService,
+        IMemoryCache cache)
     {
         _context = context;
         _achievementService = achievementService;
+        _cache = cache;
     }
 
     public async Task<List<Collectible>> GetByUserIdAsync(
         int userId)
     {
-        return await _context.Collectibles
+        var cacheKey = $"collectibles_{userId}";
+
+        if (_cache.TryGetValue(
+            cacheKey,
+            out List<Collectible>? cachedCollectibles))
+        {
+            return cachedCollectibles!;
+        }
+
+        var collectibles = await _context.Collectibles
             .AsNoTracking()
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
+
+        _cache.Set(
+            cacheKey,
+            collectibles,
+            TimeSpan.FromMinutes(5));
+
+        return collectibles;
     }
 
     public async Task<List<Collectible>> GetSelectedCategoryAsync(
@@ -79,6 +99,8 @@ public class CollectibleService
 
         await _context.SaveChangesAsync();
 
+        _cache.Remove($"collectibles_{userId}");
+
         await UpdateAchievementsSafelyAsync(userId);
 
         return true;
@@ -101,6 +123,8 @@ public class CollectibleService
         _context.Collectibles.Remove(collectible);
 
         await _context.SaveChangesAsync();
+
+        _cache.Remove($"collectibles_{userId}");
 
         await UpdateAchievementsSafelyAsync(userId);
 
@@ -145,6 +169,8 @@ public class CollectibleService
         _context.Collectibles.Add(collectible);
 
         await _context.SaveChangesAsync();
+
+        _cache.Remove($"collectibles_{collectible.UserId}");
 
         return collectible;
     }
