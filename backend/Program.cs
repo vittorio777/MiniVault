@@ -109,18 +109,27 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+
+//     var dbContext =
+//         scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+//     await dbContext.Database.MigrateAsync();
+
+//     app.MapOpenApi();
+//     app.MapScalarApiReference();
+// }
+
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
-
-    var dbContext =
-        scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await dbContext.Database.MigrateAsync();
-
-    app.MapOpenApi();
-    app.MapScalarApiReference();
 }
+
+app.MapOpenApi();
+app.MapScalarApiReference();
 
 app.UseCors("AllowFrontend");
 
