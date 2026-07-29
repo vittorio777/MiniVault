@@ -1,0 +1,88 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: minivault-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: mineplus
+      POSTGRES_USER: mine
+      POSTGRES_PASSWORD: minepass
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mine -d mineplus"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+    networks:
+      - minivault-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: minivault-backend
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=mineplus;Username=mine;Password=minepass"
+
+      Jwt__Issuer: MiniVault.Api
+      Jwt__Audience: MiniVault.Client
+      Jwt__SecretKey: MiniVault-Docker-Development-Secret-Key-Replace-In-Production-2026
+      Jwt__ExpirationMinutes: 1440
+
+      Cors__AllowedOrigins__0: http://localhost:5173
+
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      REMOVE_BG_API_KEY: ${REMOVE_BG_API_KEY}
+      GOOGLEAI_API_KEY: ${GOOGLEAI_API_KEY}
+
+    volumes:
+      - ./backend/wwwroot:/app/wwwroot
+
+    networks:
+      - minivault-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    container_name: minivault-frontend
+    restart: unless-stopped
+
+    depends_on:
+      - backend
+
+    ports:
+      - "5173:80"
+
+    networks:
+      - minivault-network
+
+volumes:
+  postgres_data:
+
+networks:
+  minivault-network:
+    driver: bridge

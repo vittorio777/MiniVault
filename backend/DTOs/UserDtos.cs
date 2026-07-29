@@ -21,7 +21,7 @@ public class AuthResponse
 public class RegisterRequest
 {
     [Required]
-    [StringLength(30, MinimumLength = 2)]
+    [StringLength(30, MinimumLength = 1)]
     public string Nickname { get; set; } = string.Empty;
 
     [Required]
@@ -29,7 +29,7 @@ public class RegisterRequest
     public string Email { get; set; } = string.Empty;
 
     [Required]
-    [StringLength(100, MinimumLength = 8)]
+    [StringLength(100, MinimumLength = 1)]
     public string Password { get; set; } = string.Empty;
 }
 
