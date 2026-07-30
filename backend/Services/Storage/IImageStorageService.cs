@@ -6,6 +6,7 @@ public interface IImageStorageService
         Stream stream,
         string fileName,
         string contentType,
+        string? subdirectory = null,
         CancellationToken cancellationToken = default
     );
 
@@ -13,4 +14,6 @@ public interface IImageStorageService
         string imageUrl,
         CancellationToken cancellationToken = default
     );
+
+    string GetPhysicalPath(string imageUrl);
 }

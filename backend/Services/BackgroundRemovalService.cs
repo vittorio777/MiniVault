@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 
-using IOFile = System.IO.File;
+using MiniVault.Services.Storage;
+
 using SysEnvironment = System.Environment;
 
 namespace MiniVault.Services;
@@ -11,16 +12,16 @@ public class BackgroundRemovalService
         "https://api.remove.bg/v1.0/removebg";
 
     private readonly HttpClient _httpClient;
-    private readonly IWebHostEnvironment _environment;
+    private readonly IImageStorageService _imageStorage;
     private readonly string _apiKey;
 
     public BackgroundRemovalService(
         HttpClient httpClient,
         IConfiguration configuration,
-        IWebHostEnvironment environment)
+        IImageStorageService imageStorage)
     {
         _httpClient = httpClient;
-        _environment = environment;
+        _imageStorage = imageStorage;
 
         _apiKey =
             configuration["RemoveBg:ApiKey"]
@@ -30,13 +31,6 @@ public class BackgroundRemovalService
             ?? throw new InvalidOperationException(
                 "Remove.bg API key is missing."
             );
-
-        if (string.IsNullOrWhiteSpace(_apiKey))
-        {
-            throw new InvalidOperationException(
-                "Remove.bg API key is missing."
-            );
-        }
     }
 
     public async Task<string> RemoveBackgroundAsync(
@@ -51,9 +45,9 @@ public class BackgroundRemovalService
         }
 
         var inputLocalPath =
-            ConvertImageUrlToLocalPath(imageUrl);
+            _imageStorage.GetPhysicalPath(imageUrl);
 
-        if (!IOFile.Exists(inputLocalPath))
+        if (!File.Exists(inputLocalPath))
         {
             throw new FileNotFoundException(
                 "Generated image does not exist.",
@@ -61,162 +55,82 @@ public class BackgroundRemovalService
             );
         }
 
-        var outputFileName =
-            $"{Guid.NewGuid()}.png";
+        await using var imageStream =
+            File.OpenRead(inputLocalPath);
 
-        var outputRelativePath =
-            Path.Combine(
-                "uploads",
-                "generated",
-                outputFileName
+        using var imageContent =
+            new StreamContent(imageStream);
+
+        imageContent.Headers.ContentType =
+            new MediaTypeHeaderValue(
+                GetMimeType(inputLocalPath)
             );
 
-        var outputLocalPath =
-            Path.Combine(
-                GetWebRootPath(),
-                outputRelativePath
-            );
+        using var form =
+            new MultipartFormDataContent();
 
-        Directory.CreateDirectory(
-            Path.GetDirectoryName(outputLocalPath)!
+        form.Add(
+            imageContent,
+            "image_file",
+            Path.GetFileName(inputLocalPath)
         );
 
-        try
+        form.Add(
+            new StringContent("preview"),
+            "size"
+        );
+
+        using var request =
+            new HttpRequestMessage(
+                HttpMethod.Post,
+                RemoveBackgroundEndpoint
+            );
+
+        request.Headers.Add(
+            "X-Api-Key",
+            _apiKey
+        );
+
+        request.Content = form;
+
+        using var response =
+            await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead
+            );
+
+        if (!response.IsSuccessStatusCode)
         {
-            await using var imageStream =
-                IOFile.OpenRead(inputLocalPath);
+            var errorBody =
+                await response.Content.ReadAsStringAsync();
 
-            using var imageContent =
-                new StreamContent(imageStream);
-
-            imageContent.Headers.ContentType =
-                new MediaTypeHeaderValue(
-                    GetMimeType(inputLocalPath)
-                );
-
-            using var form =
-                new MultipartFormDataContent();
-
-            form.Add(
-                imageContent,
-                "image_file",
-                Path.GetFileName(inputLocalPath)
+            throw new InvalidOperationException(
+                $"Remove.bg request failed with status " +
+                $"{(int)response.StatusCode}: {errorBody}"
             );
-
-            // 高清
-            // form.Add(
-            //     new StringContent("auto"),
-            //     "size"
-            // );
-
-            // 预览
-            form.Add(
-                new StringContent("preview"),
-                "size"
-            );
-
-            using var request =
-                new HttpRequestMessage(
-                    HttpMethod.Post,
-                    RemoveBackgroundEndpoint
-                );
-
-            request.Headers.Add(
-                "X-Api-Key",
-                _apiKey
-            );
-
-            request.Content = form;
-
-            using var response =
-                await _httpClient.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead
-                );
-
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorBody =
-                    await response.Content.ReadAsStringAsync();
-
-                throw new InvalidOperationException(
-                    $"Remove.bg request failed with status " +
-                    $"{(int)response.StatusCode}: {errorBody}"
-                );
-            }
-
-            await using var outputStream =
-                new FileStream(
-                    outputLocalPath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.None
-                );
-
-            await response.Content.CopyToAsync(outputStream);
-
-            return "/" +
-                   outputRelativePath.Replace(
-                       Path.DirectorySeparatorChar,
-                       '/'
-                   );
         }
-        catch
-        {
-            if (IOFile.Exists(outputLocalPath))
-            {
-                IOFile.Delete(outputLocalPath);
-            }
 
-            throw;
-        }
-    }
+        await using var outputStream =
+            await response.Content.ReadAsStreamAsync();
 
-    private string ConvertImageUrlToLocalPath(
-        string imageUrl)
-    {
-        var relativePath =
-            imageUrl
-                .TrimStart('/')
-                .Replace(
-                    "/",
-                    Path.DirectorySeparatorChar.ToString()
-                );
-
-        return Path.Combine(
-            GetWebRootPath(),
-            relativePath
+        return await _imageStorage.UploadAsync(
+            outputStream,
+            $"{Guid.NewGuid()}.png",
+            "image/png",
+            "generated"
         );
     }
 
-    private string GetWebRootPath()
-    {
-        if (!string.IsNullOrWhiteSpace(
-                _environment.WebRootPath
-            ))
-        {
-            return _environment.WebRootPath;
-        }
-
-        return Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "wwwroot"
-        );
-    }
-
-    private static string GetMimeType(
-        string path)
+    private static string GetMimeType(string path)
     {
         var extension =
-            Path.GetExtension(path)
-                .ToLowerInvariant();
+            Path.GetExtension(path).ToLowerInvariant();
 
         return extension switch
         {
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".webp" => "image/webp",
-
             _ => throw new NotSupportedException(
                 $"Unsupported image type: {extension}"
             )

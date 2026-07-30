@@ -18,7 +18,6 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<CollectibleService>();
 builder.Services.AddScoped<UserService>();
-builder.Services.AddScoped<ImageService>();
 builder.Services.AddScoped<GenerationService>();
 builder.Services.AddHttpClient<BackgroundRemovalService>(client =>
 {

@@ -2,41 +2,34 @@ using System.Text.Json;
 using Google.GenAI;
 using Google.GenAI.Types;
 using OpenAI.Chat;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Processing;
-
 using MiniVault.Models;
+using MiniVault.Services.Storage;
 
 using IOFile = System.IO.File;
 using SysEnvironment = System.Environment;
-using SharpImage = SixLabors.ImageSharp.Image;
 
 namespace MiniVault.Services;
 
 public class GenerationService
 {
-    private readonly ImageService _imageService;
+    private readonly IImageStorageService _imageStorage;
     private readonly CollectibleService _collectibleService;
     private readonly AchievementService _achievementService;
     private readonly BackgroundRemovalService _backgroundRemovalService;
-    private readonly IWebHostEnvironment _environment;
     private readonly ChatClient _openaiClient;
     private readonly Client _googleClient;
 
     public GenerationService(
-        ImageService imageService,
+        IImageStorageService imageStorage,
         CollectibleService collectibleService,
         AchievementService achievementService,
         BackgroundRemovalService backgroundRemovalService,
-        IConfiguration configuration,
-        IWebHostEnvironment environment)
+        IConfiguration configuration)
     {
-        _imageService = imageService;
+        _imageStorage = imageStorage;
         _collectibleService = collectibleService;
         _achievementService = achievementService;
         _backgroundRemovalService = backgroundRemovalService;
-        _environment = environment;
 
         var openaiApiKey =
             configuration["OpenAI:ApiKey"]
@@ -73,13 +66,7 @@ public class GenerationService
             );
         }
 
-        if (file == null || file.Length == 0)
-        {
-            throw new ArgumentException(
-                "An image file is required.",
-                nameof(file)
-            );
-        }
+        ValidateUploadedImage(file);
 
         var originalImageUrl = string.Empty;
         var rawGeneratedImageUrl = string.Empty;
@@ -88,8 +75,15 @@ public class GenerationService
 
         try
         {
-            originalImageUrl =
-                await _imageService.UploadImageAsync(file);
+            await using (var originalStream = file.OpenReadStream())
+            {
+                originalImageUrl =
+                    await _imageStorage.UploadAsync(
+                        originalStream,
+                        file.FileName,
+                        file.ContentType
+                    );
+            }
 
             var collectible =
                 await GenerateInfoAsync(originalImageUrl);
@@ -114,7 +108,7 @@ public class GenerationService
 
             collectibleCreated = true;
 
-            DeleteLocalImageIfExists(
+            await DeleteImageIfExistsAsync(
                 rawGeneratedImageUrl
             );
 
@@ -140,15 +134,15 @@ public class GenerationService
         {
             if (!collectibleCreated)
             {
-                DeleteLocalImageIfExists(
+                await DeleteImageIfExistsAsync(
                     generatedImageUrl
                 );
 
-                DeleteLocalImageIfExists(
+                await DeleteImageIfExistsAsync(
                     rawGeneratedImageUrl
                 );
 
-                DeleteLocalImageIfExists(
+                await DeleteImageIfExistsAsync(
                     originalImageUrl
                 );
             }
@@ -161,7 +155,7 @@ public class GenerationService
         string originalImageUrl)
     {
         var localPath =
-            ConvertImageUrlToLocalPath(originalImageUrl);
+            _imageStorage.GetPhysicalPath(originalImageUrl);
 
         if (!IOFile.Exists(localPath))
         {
@@ -271,7 +265,7 @@ public class GenerationService
         return await RetryAsync(async () =>
         {
             var localPath =
-                ConvertImageUrlToLocalPath(originalImageUrl);
+                _imageStorage.GetPhysicalPath(originalImageUrl);
 
             if (!IOFile.Exists(localPath))
             {
@@ -281,41 +275,18 @@ public class GenerationService
                 );
             }
 
-            var outputFileName =
-                $"{Guid.NewGuid()}.png";
-
-            var outputRelativePath =
-                Path.Combine(
-                    "uploads",
-                    "generated",
-                    outputFileName
-                );
-
-            var outputLocalPath =
-                Path.Combine(
-                    GetWebRootPath(),
-                    outputRelativePath
-                );
-
-            Directory.CreateDirectory(
-                Path.GetDirectoryName(outputLocalPath)!
-            );
-
             var generatedBytes =
-                await GenerateGoogleImageBytesAsync(
-                    localPath
-                );
+                await GenerateGoogleImageBytesAsync(localPath);
 
-            await IOFile.WriteAllBytesAsync(
-                outputLocalPath,
-                generatedBytes
+            await using var generatedStream =
+                new MemoryStream(generatedBytes, writable: false);
+
+            return await _imageStorage.UploadAsync(
+                generatedStream,
+                $"{Guid.NewGuid()}.png",
+                "image/png",
+                "generated"
             );
-
-            return "/" +
-                   outputRelativePath.Replace(
-                       Path.DirectorySeparatorChar,
-                       '/'
-                   );
         });
     }
 
@@ -521,78 +492,7 @@ public class GenerationService
             );
     }
 
-    private async Task<string> PrepareImageForGoogleAsync(
-        string inputPath)
-    {
-        using var image =
-            await SharpImage.LoadAsync(inputPath);
-
-        image.Mutate(x =>
-            x.Resize(new ResizeOptions
-            {
-                Size = new Size(1024, 1024),
-                Mode = ResizeMode.Max
-            })
-        );
-
-        var convertedFileName =
-            $"{Guid.NewGuid()}.jpg";
-
-        var convertedRelativePath =
-            Path.Combine(
-                "uploads",
-                "converted",
-                convertedFileName
-            );
-
-        var convertedLocalPath =
-            Path.Combine(
-                GetWebRootPath(),
-                convertedRelativePath
-            );
-
-        Directory.CreateDirectory(
-            Path.GetDirectoryName(convertedLocalPath)!
-        );
-
-        await image.SaveAsJpegAsync(
-            convertedLocalPath,
-            new JpegEncoder
-            {
-                Quality = 88
-            }
-        );
-
-        Console.WriteLine(
-            $"Prepared image: {convertedLocalPath}"
-        );
-
-        Console.WriteLine(
-            $"Prepared image size: " +
-            $"{new FileInfo(convertedLocalPath).Length / 1024} KB"
-        );
-
-        return convertedLocalPath;
-    }
-
-    private string ConvertImageUrlToLocalPath(
-        string imageUrl)
-    {
-        var relativePath =
-            imageUrl
-                .TrimStart('/')
-                .Replace(
-                    "/",
-                    Path.DirectorySeparatorChar.ToString()
-                );
-
-        return Path.Combine(
-            GetWebRootPath(),
-            relativePath
-        );
-    }
-
-    private void DeleteLocalImageIfExists(
+    private async Task DeleteImageIfExistsAsync(
         string imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
@@ -602,13 +502,7 @@ public class GenerationService
 
         try
         {
-            var localPath =
-                ConvertImageUrlToLocalPath(imageUrl);
-
-            if (IOFile.Exists(localPath))
-            {
-                IOFile.Delete(localPath);
-            }
+            await _imageStorage.DeleteAsync(imageUrl);
         }
         catch
         {
@@ -616,19 +510,41 @@ public class GenerationService
         }
     }
 
-    private string GetWebRootPath()
+    private static void ValidateUploadedImage(IFormFile file)
     {
-        if (!string.IsNullOrWhiteSpace(
-                _environment.WebRootPath
-            ))
+        if (file == null || file.Length == 0)
         {
-            return _environment.WebRootPath;
+            throw new ArgumentException(
+                "An image file is required.",
+                nameof(file)
+            );
         }
 
-        return Path.Combine(
-            Directory.GetCurrentDirectory(),
-            "wwwroot"
-        );
+        var allowedExtensions = new[]
+        {
+            ".jpg", ".jpeg", ".png", ".webp"
+        };
+
+        var extension =
+            Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            throw new ArgumentException(
+                "Only JPG, PNG, and WEBP images are allowed.",
+                nameof(file)
+            );
+        }
+
+        const long maxFileSize = 5 * 1024 * 1024;
+
+        if (file.Length > maxFileSize)
+        {
+            throw new ArgumentException(
+                "File size must be under 5 MB.",
+                nameof(file)
+            );
+        }
     }
 
     private static string GetMimeType(
