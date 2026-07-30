@@ -114,10 +114,8 @@ var app = builder.Build();
 //     app.MapScalarApiReference();
 // }
 
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
-
     var dbContext =
         scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
