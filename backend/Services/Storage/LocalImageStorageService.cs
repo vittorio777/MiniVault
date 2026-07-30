@@ -2,12 +2,28 @@ namespace MiniVault.Services.Storage;
 
 public class LocalImageStorageService : IImageStorageService
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly string _uploadsDirectory;
 
     public LocalImageStorageService(
         IWebHostEnvironment environment)
     {
-        _environment = environment;
+        var storageRoot = environment.IsDevelopment()
+            ? Path.Combine(
+                environment.ContentRootPath,
+                "wwwroot"
+            )
+            : Path.Combine(
+                "/home",
+                "data",
+                "minivault"
+            );
+
+        _uploadsDirectory = Path.Combine(
+            storageRoot,
+            "uploads"
+        );
+
+        Directory.CreateDirectory(_uploadsDirectory);
     }
 
     public async Task<string> UploadAsync(
@@ -21,15 +37,8 @@ public class LocalImageStorageService : IImageStorageService
         var storedFileName =
             $"{Guid.NewGuid():N}{extension}";
 
-        var uploadsDirectory = Path.Combine(
-            _environment.WebRootPath,
-            "uploads"
-        );
-
-        Directory.CreateDirectory(uploadsDirectory);
-
         var filePath = Path.Combine(
-            uploadsDirectory,
+            _uploadsDirectory,
             storedFileName
         );
 
@@ -59,13 +68,16 @@ public class LocalImageStorageService : IImageStorageService
             return Task.CompletedTask;
         }
 
-        var relativePath = imageUrl
-            .TrimStart('/')
-            .Replace('/', Path.DirectorySeparatorChar);
+        var fileName = Path.GetFileName(imageUrl);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return Task.CompletedTask;
+        }
 
         var filePath = Path.Combine(
-            _environment.WebRootPath,
-            relativePath
+            _uploadsDirectory,
+            fileName
         );
 
         if (File.Exists(filePath))

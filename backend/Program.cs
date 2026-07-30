@@ -2,6 +2,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.FileProviders;
+
 using MiniVault.Api.Settings;
 using MiniVault.Data;
 using MiniVault.Services;
@@ -127,7 +129,29 @@ app.MapScalarApiReference();
 
 app.UseCors("AllowFrontend");
 
-app.UseStaticFiles();
+if (app.Environment.IsDevelopment())
+{
+    app.UseStaticFiles();
+}
+else
+{
+    var uploadsDirectory = Path.Combine(
+        "/home",
+        "data",
+        "minivault",
+        "uploads"
+    );
+
+    Directory.CreateDirectory(uploadsDirectory);
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(
+            uploadsDirectory
+        ),
+        RequestPath = "/uploads"
+    });
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
