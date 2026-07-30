@@ -93,7 +93,9 @@ builder.Services.AddCors(options =>
         policy
             .WithOrigins(
                 "http://localhost:5173",
-                "https://polite-coast-0b83c1900.7.azurestaticapps.net"
+                "https://polite-coast-0b83c1900.7.azurestaticapps.net",
+                "https://minivault.online",
+                "https://www.minivault.online"
             )
             .AllowAnyHeader()
             .AllowAnyMethod();
