@@ -536,7 +536,7 @@ public class GenerationService
             );
         }
 
-        const long maxFileSize = 5 * 1024 * 1024;
+        const long maxFileSize = 20 * 1024 * 1024;
 
         if (file.Length > maxFileSize)
         {
