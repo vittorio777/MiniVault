@@ -541,7 +541,7 @@ public class GenerationService
         if (file.Length > maxFileSize)
         {
             throw new ArgumentException(
-                "File size must be under 5 MB.",
+                "File size must be under 20 MB.",
                 nameof(file)
             );
         }
