@@ -1,4 +1,3 @@
-```md
 # MiniVault
 
 ## 🚀 Deployment
@@ -50,4 +49,3 @@ Memory caching is used to reduce repeated database queries for collectible data.
 If I were to do this project again, I would use a shorter schedule for the main development work and leave more time for unexpected problems.
 
 A larger time buffer would allow me to handle these problems with less pressure and spend more time checking the final quality of the application.
-```
