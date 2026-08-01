@@ -1,57 +1,53 @@
+```md
 # MiniVault
 
-## Deployment
+## 🚀 Deployment
 
-Frontend: https://minivault.online
+| Service      | URL                                                                                 |
+| ------------ | ----------------------------------------------------------------------------------- |
+| **Frontend** | https://minivault.online                                                            |
+| **Backend**  | https://minivault-api-ejf7d3g8awahg4ev.australiaeast-01.azurewebsites.net/scalar/v1 |
 
-Backend: https://minivault-api-ejf7d3g8awahg4ev.australiaeast-01.azurewebsites.net/scalar/v1
-
----
-
-## Brief Introduction
+## 📖 Brief Introduction
 
 MiniVault is a full-stack web application that allows users to upload photos and generate AI miniature collectibles. Users can save, view, edit and manage their own digital collection.
 
----
-
-## Relation to the Theme
+## 🎮 Relation to the Theme
 
 MiniVault follows the gamification theme by encouraging users to grow their collection through achievements. As users create more collectibles, they unlock achievements and track their collection progress, making the experience more engaging.
 
----
-
-## Interesting Features
+## ✨ Interesting Features
 
 - Generate miniature collectibles from user photos using AI.
 - Automatically remove the background before saving the collectible.
 - Build and manage a personal digital collection.
 - Unlock achievements as the collection grows.
 
----
+## ⚙️ Advanced Features
 
-## Advanced Features
-
-### ✓ Implement Security Measures
+### ✅ Implement Security Measures
 
 This project implements the following security measures:
 
-- Password hashing
-  Password hashing is used to avoid storing plain text passwords in the database.
+#### Password Hashing
 
-- Data validation
-  Data validation is used to check user input before it is processed, helping reduce invalid requests and improving data quality.
+Password hashing is used to avoid storing plain text passwords in the database.
 
-### ✓ Dockerize your project using Docker
+#### Data Validation
+
+Data validation is used to check user input before it is processed, helping reduce invalid requests and improving data quality.
+
+### ✅ Dockerize Your Project Using Docker
 
 The frontend, backend and PostgreSQL database are containerised using Docker, making the project easier to deploy and run in different environments.
 
-### ✓ Caching strategy and API optimization techniques
+### ✅ Caching Strategy and API Optimization Techniques
 
 Memory caching is used to reduce repeated database queries for collectible data.
 
----
-
-## Self Reflection
+## 💭 Self Reflection
 
 If I were to do this project again, I would use a shorter schedule for the main development work and leave more time for unexpected problems.
+
 A larger time buffer would allow me to handle these problems with less pressure and spend more time checking the final quality of the application.
+```
