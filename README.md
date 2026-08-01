@@ -29,14 +29,13 @@ This project implements the following security measures:
 
 #### Password Hashing
 
-  Password hashing is used to avoid storing plain text passwords in the database.
+- Password hashing is used to avoid storing plain text passwords in the database.
 
 #### Data Validation
 
-  Data validation is used to check user input before it is processed, helping reduce invalid requests and improving data quality.
+- Data validation is used to check user input before it is processed, helping reduce invalid requests and improving data quality.
 
 ### 🐳 Docker Containerization
-
 
 The frontend, backend and PostgreSQL database are containerised using Docker, making the project easier to deploy and run in different environments.
 
