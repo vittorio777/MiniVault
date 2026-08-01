@@ -9,7 +9,7 @@
 
 ## 📖 Brief Introduction
 
-MiniVault is a full-stack web application that allows users to upload photos and generate AI miniature collectibles. Users can save, view, edit and manage their own digital collection.
+MiniVault is a web application that allows users to upload photos and generate AI miniature collectibles. Users can save, view, edit and manage their own digital collection.
 
 ## 🎮 Relation to the Theme
 
@@ -18,29 +18,29 @@ MiniVault follows the gamification theme by encouraging users to grow their coll
 ## ✨ Interesting Features
 
 - Generate miniature collectibles from user photos using AI.
-- Automatically remove the background before saving the collectible.
 - Build and manage a personal digital collection.
 - Unlock achievements as the collection grows.
 
 ## ⚙️ Advanced Features
 
-### ✅ Implement Security Measures
+### 🔒 Security Measures
 
 This project implements the following security measures:
 
 #### Password Hashing
 
-Password hashing is used to avoid storing plain text passwords in the database.
+  Password hashing is used to avoid storing plain text passwords in the database.
 
 #### Data Validation
 
-Data validation is used to check user input before it is processed, helping reduce invalid requests and improving data quality.
+  Data validation is used to check user input before it is processed, helping reduce invalid requests and improving data quality.
 
-### ✅ Dockerize Your Project Using Docker
+### 🐳 Docker Containerization
+
 
 The frontend, backend and PostgreSQL database are containerised using Docker, making the project easier to deploy and run in different environments.
 
-### ✅ Caching Strategy and API Optimization Techniques
+### ⚡ Caching
 
 Memory caching is used to reduce repeated database queries for collectible data.
 
