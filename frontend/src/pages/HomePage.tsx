@@ -21,6 +21,8 @@ import type { Collectible } from "@/types/collectible";
 
 import "./HomePage.css";
 
+// Restore the authenticated user only when both the stored
+// user details and JWT are available.
 function getInitialUser(): UserResponse | null {
   const token = getStoredToken();
   const user = getStoredUser();
@@ -45,6 +47,8 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Reload the collection whenever the authenticated user changes.
+  // Clear user-specific state immediately after logout.
   useEffect(() => {
     if (!user) {
       setCollectibles([]);
@@ -74,6 +78,7 @@ export default function HomePage() {
     }
   }
 
+  // Update the page state after either registration or login succeeds.
   function handleAuthenticationSuccess(authenticatedUser: UserResponse): void {
     setUser(authenticatedUser);
     setSelectedCategory("all");
@@ -84,6 +89,8 @@ export default function HomePage() {
   }
 
   function handleLogout(): void {
+    // Remove the persisted token and user details before
+    // clearing authenticated page state.
     logout();
 
     setUser(null);
@@ -93,6 +100,8 @@ export default function HomePage() {
   }
 
   function handleUploadSuccess(collectible: Collectible): void {
+    // Insert the new collectible immediately without reloading
+    // the complete collection from the API.
     setCollectibles((currentCollectibles) => [
       collectible,
       ...currentCollectibles.filter((item) => item.id !== collectible.id),
@@ -106,6 +115,8 @@ export default function HomePage() {
     navigate(`/collectibles/${collectible.id}`);
   }
 
+  // Derive a unique, alphabetically sorted category list
+  // from the currently loaded collection.
   const categories = useMemo(
     () =>
       Array.from(
@@ -118,6 +129,8 @@ export default function HomePage() {
     [collectibles],
   );
 
+  // Recalculate the visible collection only when the collection
+  // or selected category changes.
   const filteredCollectibles = useMemo(() => {
     if (selectedCategory === "all") {
       return collectibles;
@@ -194,7 +207,9 @@ export default function HomePage() {
       {!user ? (
         <section className="home-page__guest-section">
           <div className="home-page__guest-content">
-            <h1 className="home-page__guest-title">Turn anything into a miniature.</h1>
+            <h1 className="home-page__guest-title">
+              Turn anything into a miniature.
+            </h1>
 
             <p className="home-page__guest-description">
               Create, organize, and revisit your personal collection in one
@@ -284,4 +299,3 @@ export default function HomePage() {
     </main>
   );
 }
-

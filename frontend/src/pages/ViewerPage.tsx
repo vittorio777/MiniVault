@@ -29,10 +29,13 @@ export default function ViewerPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Keep editable form values separate from the loaded collectible
+  // until the user successfully saves the changes.
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
 
+  // Reload the collectible whenever the route ID changes.
   useEffect(() => {
     const collectibleId = Number(id);
 
@@ -68,6 +71,8 @@ export default function ViewerPage() {
       return;
     }
 
+    // Copy the current collectible values into the form
+    // so cancelling the modal does not change page state.
     setTitle(collectible.title);
     setCategory(collectible.category);
     setDescription(collectible.description);
@@ -76,12 +81,14 @@ export default function ViewerPage() {
   }
 
   function closeEditModal(): void {
+    // Prevent the modal from closing while a save request is running.
     if (!isUpdating) {
       setShowEditModal(false);
     }
   }
 
   function closeDeleteModal(): void {
+    // Prevent duplicate interaction while deletion is in progress.
     if (!isDeleting) {
       setShowDeleteModal(false);
     }
@@ -116,6 +123,8 @@ export default function ViewerPage() {
         description: normalizedDescription,
       });
 
+      // Update local state immediately after the API succeeds
+      // instead of requesting the collectible again.
       setCollectible({
         ...collectible,
         title: normalizedTitle,
@@ -124,6 +133,7 @@ export default function ViewerPage() {
         updatedAt: new Date().toISOString(),
       });
 
+      // Editing a category may change achievement progress.
       notifyAchievementsUpdated();
       setShowEditModal(false);
     } catch (requestError) {
@@ -147,8 +157,12 @@ export default function ViewerPage() {
       setError("");
 
       await deleteCollectible(collectible.id);
+
+      // Deleting an item may affect collection-based achievements.
       notifyAchievementsUpdated();
 
+      // Replace the current history entry because the deleted
+      // collectible page is no longer valid.
       navigate("/", { replace: true });
     } catch (requestError) {
       setError(
@@ -167,9 +181,7 @@ export default function ViewerPage() {
       <main className="viewer-page viewer-page--centered">
         <div className="viewer-page__loading-card">
           <span className="viewer-page__spinner" aria-hidden="true" />
-          <p className="viewer-page__loading-text">
-            Opening your collectible
-          </p>
+          <p className="viewer-page__loading-text">Opening your collectible</p>
         </div>
       </main>
     );

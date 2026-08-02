@@ -7,6 +7,9 @@ using MiniVault.Services;
 
 namespace MiniVault.Controllers;
 
+/// <summary>
+/// Provides CRUD endpoints for the authenticated user's collectibles.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -20,9 +23,13 @@ public class CollectiblesController : ControllerBase
         _collectibleService = collectibleService;
     }
 
+    /// <summary>
+    /// Returns all collectibles owned by the authenticated user.
+    /// </summary>
     [HttpGet]
     public async Task<ActionResult<List<CollectibleResponse>>> GetCollectibles()
     {
+        // Read the authenticated user's ID from the validated JWT.
         var userId = User.GetUserId();
 
         var collectibles =
@@ -35,6 +42,9 @@ public class CollectiblesController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Returns the authenticated user's collectibles in the specified category.
+    /// </summary>
     [HttpGet("category/{category}")]
     public async Task<ActionResult<List<CollectibleResponse>>> GetCollectiblesByCategory(
         string category)
@@ -54,6 +64,9 @@ public class CollectiblesController : ControllerBase
         return Ok(response);
     }
 
+    /// <summary>
+    /// Returns a collectible by ID if it belongs to the authenticated user.
+    /// </summary>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<CollectibleResponse>> GetCollectibleById(
         int id)
@@ -74,6 +87,9 @@ public class CollectiblesController : ControllerBase
         return Ok(ToResponse(collectible));
     }
 
+    /// <summary>
+    /// Updates a collectible owned by the authenticated user.
+    /// </summary>
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateCollectibleById(
         int id,
@@ -103,6 +119,9 @@ public class CollectiblesController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Deletes a collectible owned by the authenticated user.
+    /// </summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteCollectibleById(
         int id)
@@ -123,6 +142,9 @@ public class CollectiblesController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Creates a new collectible for the authenticated user.
+    /// </summary>
     [HttpPost]
     public async Task<ActionResult<CollectibleResponse>> CreateCollectible(
         CreateCollectibleRequest request)
@@ -147,6 +169,8 @@ public class CollectiblesController : ControllerBase
         var response =
             ToResponse(createdCollectible);
 
+        // Return the URI of the newly created resource
+        // following REST conventions.
         return CreatedAtAction(
             nameof(GetCollectibleById),
             new { id = response.Id },
@@ -154,6 +178,7 @@ public class CollectiblesController : ControllerBase
         );
     }
 
+    // Convert the domain model into the API response model.
     private static CollectibleResponse ToResponse(
         Collectible collectible)
     {

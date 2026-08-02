@@ -15,6 +15,8 @@ export default function UploadButton({ onUploadSuccess }: UploadButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
 
   function handleClick(): void {
+    // Prevent opening the file picker while a generation
+    // request is already in progress.
     if (!isGenerating) {
       fileInputRef.current?.click();
     }
@@ -32,9 +34,14 @@ export default function UploadButton({ onUploadSuccess }: UploadButtonProps) {
     try {
       setIsGenerating(true);
 
+      // Upload the selected image and wait for the backend
+      // to return the completed collectible.
       const collectible = await captureImage(file);
 
       onUploadSuccess(collectible);
+
+      // Refresh achievement state because creating a collectible
+      // may unlock or advance an achievement.
       notifyAchievementsUpdated();
     } catch (error) {
       alert(
@@ -89,4 +96,3 @@ export default function UploadButton({ onUploadSuccess }: UploadButtonProps) {
     </>
   );
 }
-

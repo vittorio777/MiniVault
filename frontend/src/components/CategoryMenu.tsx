@@ -6,6 +6,8 @@ interface CategoryMenuProps {
   onCategoryChange: (category: string) => void;
 }
 
+// Convert stored category values into readable menu labels.
+// For example, "home_items" becomes "Home Items".
 function formatCategoryLabel(category: string): string {
   if (category.trim().toLowerCase() === "all") {
     return "All";
@@ -21,6 +23,7 @@ export default function CategoryMenu({
   selectedCategory,
   onCategoryChange,
 }: CategoryMenuProps) {
+  // Always include an "all" option before the generated categories.
   const menuItems = ["all", ...categories];
 
   return (

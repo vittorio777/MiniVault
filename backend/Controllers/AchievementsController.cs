@@ -6,6 +6,9 @@ using MiniVault.Services;
 
 namespace MiniVault.Controllers;
 
+/// <summary>
+/// Provides endpoints for retrieving the authenticated user's achievements.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -19,9 +22,13 @@ public class AchievementsController : ControllerBase
         _achievementService = achievementService;
     }
 
+    /// <summary>
+    /// Returns the current user's achievement progress and unlock status.
+    /// </summary>
     [HttpGet]
     public async Task<ActionResult<List<UserAchievementResponse>>> GetAchievements()
     {
+        // Read the authenticated user's ID from the validated JWT.
         var userId = User.GetUserId();
 
         var userAchievements =
@@ -34,6 +41,7 @@ public class AchievementsController : ControllerBase
         return Ok(response);
     }
 
+    // Convert the internal service model into the API response model.
     private static UserAchievementResponse ToResponse(
         UserAchievementDetails userAchievement)
     {

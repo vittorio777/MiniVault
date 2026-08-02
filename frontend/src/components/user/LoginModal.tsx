@@ -22,6 +22,7 @@ export default function LoginModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Clear previous errors whenever the modal is closed.
   useEffect(() => {
     if (!show) {
       setError("");
@@ -29,6 +30,8 @@ export default function LoginModal({
   }, [show]);
 
   async function handleLogin(): Promise<void> {
+    // Perform basic client-side validation before sending
+    // the login request to the API.
     if (!nickname.trim() || !password) {
       setError("Please enter your nickname and password.");
       return;
@@ -43,8 +46,11 @@ export default function LoginModal({
         password,
       });
 
+      // Notify the parent component so it can update
+      // the authenticated user state immediately.
       onLoginSuccess(response.user);
 
+      // Reset the form after successful authentication.
       setNickname("");
       setPassword("");
       setError("");
@@ -67,6 +73,8 @@ export default function LoginModal({
   }
 
   function handleClose(): void {
+    // Keep the modal open while authentication is in progress
+    // to prevent duplicate or interrupted submissions.
     if (loading) {
       return;
     }
@@ -196,6 +204,8 @@ export default function LoginModal({
                 onChange={(event) => {
                   setNickname(event.target.value);
 
+                  // Remove the previous error once the user
+                  // starts correcting the form.
                   if (error) {
                     setError("");
                   }
@@ -313,4 +323,3 @@ export default function LoginModal({
     </Modal>
   );
 }
-

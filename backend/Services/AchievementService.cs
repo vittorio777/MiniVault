@@ -14,9 +14,14 @@ public class AchievementService
         _context = context;
     }
 
+    /// <summary>
+    /// Returns the user's achievement progress and unlock status.
+    /// </summary>
     public async Task<List<UserAchievementDetails>> GetByUserIdAsync(
         int userId)
     {
+        // Ensure the user has records for all currently defined achievements,
+        // then recalculate progress before returning the latest state.
         await InitializeUserAchievementsAsync(userId);
         await UpdateAchievementsAsync(userId);
 
@@ -42,6 +47,10 @@ public class AchievementService
         ).ToListAsync();
     }
 
+    /// <summary>
+    /// Creates any missing user-achievement records without duplicating
+    /// records that already exist.
+    /// </summary>
     public async Task InitializeUserAchievementsAsync(
         int userId)
     {
@@ -62,6 +71,8 @@ public class AchievementService
                     userAchievement.AchievementId)
                 .ToListAsync();
 
+        // Use a set for efficient lookup when identifying newly added
+        // achievements that the user does not yet have.
         var existingAchievementIdSet =
             existingAchievementIds.ToHashSet();
 
@@ -90,11 +101,17 @@ public class AchievementService
         await _context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Recalculates achievement progress from the user's current collection
+    /// and returns the IDs of achievements unlocked during this update.
+    /// </summary>
     public async Task<List<int>> UpdateAchievementsAsync(
         int userId)
     {
         await InitializeUserAchievementsAsync(userId);
 
+        // Load only the category values required to calculate
+        // total-collection and category-specific achievements.
         var collectibleCategories =
             await _context.Collectibles
                 .Where(collectible =>
@@ -106,6 +123,8 @@ public class AchievementService
         var totalCollectibles =
             collectibleCategories.Count;
 
+        // Group category names without case sensitivity so values such as
+        // "Animal" and "animal" contribute to the same achievement.
         var categoryCounts = collectibleCategories
             .Where(category =>
                 !string.IsNullOrWhiteSpace(category))
@@ -140,6 +159,8 @@ public class AchievementService
             var achievement = item.Achievement;
             var userAchievement = item.UserAchievement;
 
+            // "All" achievements use the complete collection count;
+            // other achievements use the matching category count.
             var actualProgress =
                 string.Equals(
                     achievement.Category,
@@ -152,11 +173,14 @@ public class AchievementService
                         0
                     );
 
+            // Do not display progress beyond the achievement target.
             var cappedProgress = Math.Min(
                 actualProgress,
                 achievement.TargetValue
             );
 
+            // Once unlocked, achievements remain unlocked even if
+            // collectibles are later deleted or recategorized.
             if (userAchievement.IsUnlocked)
             {
                 userAchievement.Progress =
@@ -185,10 +209,15 @@ public class AchievementService
         return newlyUnlockedAchievementIds;
     }
 
+    /// <summary>
+    /// Refreshes achievement progress after a collectible is created.
+    /// </summary>
     public Task<List<int>> UpdateAchievementsAfterCaptureAsync(
         int userId,
         string collectibleCategory)
     {
+        // Progress is recalculated from the database, so the supplied
+        // category is currently not required by the implementation.
         return UpdateAchievementsAsync(userId);
     }
 }

@@ -23,6 +23,8 @@ public class BackgroundRemovalService
         _httpClient = httpClient;
         _imageStorage = imageStorage;
 
+        // Load the API key from configuration or environment variables
+        // so secrets are not hard-coded into the application.
         _apiKey =
             configuration["RemoveBg:ApiKey"]
             ?? SysEnvironment.GetEnvironmentVariable(
@@ -33,6 +35,9 @@ public class BackgroundRemovalService
             );
     }
 
+    /// <summary>
+    /// Removes the background from a generated image using the Remove.bg API.
+    /// </summary>
     public async Task<string> RemoveBackgroundAsync(
         string imageUrl)
     {
@@ -55,6 +60,8 @@ public class BackgroundRemovalService
             );
         }
 
+        // Stream the image directly from disk to avoid loading
+        // the entire file into memory.
         await using var imageStream =
             File.OpenRead(inputLocalPath);
 
@@ -75,6 +82,8 @@ public class BackgroundRemovalService
             Path.GetFileName(inputLocalPath)
         );
 
+        // Request the preview image, which is sufficient for this project
+        // while keeping API usage within the free preview quota.
         form.Add(
             new StringContent("preview"),
             "size"
@@ -110,6 +119,8 @@ public class BackgroundRemovalService
             );
         }
 
+        // Save the processed image through the application's
+        // storage abstraction and return its relative URL.
         await using var outputStream =
             await response.Content.ReadAsStreamAsync();
 
@@ -121,6 +132,9 @@ public class BackgroundRemovalService
         );
     }
 
+    /// <summary>
+    /// Maps a supported image extension to its MIME type.
+    /// </summary>
     private static string GetMimeType(string path)
     {
         var extension =

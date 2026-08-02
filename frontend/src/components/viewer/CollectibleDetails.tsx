@@ -34,6 +34,7 @@ export default function CollectibleDetails({
   );
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>): void {
+    // Disable hover-based effects on touch devices.
     if (event.pointerType === "touch") {
       return;
     }
@@ -47,12 +48,15 @@ export default function CollectibleDetails({
 
     const rect = showcase.getBoundingClientRect();
 
+    // Convert the pointer position into coordinates
+    // relative to the image showcase.
     const pointerX = event.clientX - rect.left;
     const pointerY = event.clientY - rect.top;
 
     const xRatio = pointerX / rect.width;
     const yRatio = pointerY / rect.height;
 
+    // Apply a subtle 3D tilt based on the pointer position.
     const rotateY = (xRatio - 0.5) * 5;
     const rotateX = (0.5 - yRatio) * 3;
 
@@ -72,15 +76,18 @@ export default function CollectibleDetails({
 
     const lensSize = 220;
 
+    // Position the lens around the pointer.
     let lensX = pointerX - lensSize / 2;
     let lensY = pointerY - lensSize / 2;
 
+    // Keep the lens fully inside the showcase boundaries.
     lensX = Math.max(0, Math.min(lensX, rect.width - lensSize));
     lensY = Math.max(0, Math.min(lensY, rect.height - lensSize));
 
     lens.style.left = `${lensX}px`;
     lens.style.top = `${lensY}px`;
 
+    // Align the magnified background with the pointer location.
     lens.style.backgroundPosition = `${xRatio * 100}% ${yRatio * 100}%`;
 
     lens.style.opacity = "1";
@@ -90,6 +97,7 @@ export default function CollectibleDetails({
     const showcase = showcaseRef.current;
     const lens = lensRef.current;
 
+    // Restore the default orientation when the pointer leaves.
     if (showcase) {
       showcase.style.transform =
         "perspective(1000px) rotateX(0deg) rotateY(0deg)";
@@ -229,4 +237,3 @@ function MagnifierIcon() {
     </svg>
   );
 }
-

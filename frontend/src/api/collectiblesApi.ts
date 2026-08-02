@@ -22,6 +22,7 @@ export function getCollectibles(): Promise<Collectible[]> {
 export function getCollectiblesByCategory(
   category: string,
 ): Promise<Collectible[]> {
+  // Encode the category to support spaces and special characters.
   return apiRequest<Collectible[]>(
     `/api/collectibles/category/${encodeURIComponent(category)}`,
   );

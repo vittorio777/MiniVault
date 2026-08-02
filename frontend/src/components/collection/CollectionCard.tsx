@@ -1,11 +1,6 @@
 import "./CollectionCard.css";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent,
-} from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 
 import type { Collectible } from "@/types/collectible";
 import { getImageUrl } from "@/utils/imageUrl";
@@ -44,9 +39,13 @@ export default function CollectionCard({
       return;
     }
 
+    // Convert the pointer position into values relative
+    // to the card's dimensions.
     const localX = (clientX - bounds.left) / bounds.width;
     const localY = (clientY - bounds.top) / bounds.height;
 
+    // Normalize both axes to the range -1 to 1 so the
+    // movement remains consistent across different card sizes.
     const normalizedX = Math.max(-1, Math.min(1, (localX - 0.5) * 2));
     const normalizedY = Math.max(-1, Math.min(1, (localY - 0.5) * 2));
 
@@ -55,6 +54,7 @@ export default function CollectionCard({
     const translateX = normalizedX * 2.5;
     const translateY = normalizedY * 1.5;
 
+    // Move and rotate the collectible slightly toward the pointer.
     object.style.transform = `
       translate3d(${translateX}px, ${translateY - 5}px, 0)
       rotateX(${rotateX}deg)
@@ -62,6 +62,8 @@ export default function CollectionCard({
       scale(1.025)
     `;
 
+    // Move the shadow in the opposite direction to reinforce
+    // the impression that the object is lifting from the surface.
     shadow.style.transform = `
       translate3d(${normalizedX * -7}px, ${normalizedY * 2}px, 0)
       scaleX(${1 + Math.abs(normalizedX) * 0.04})
@@ -69,10 +71,13 @@ export default function CollectionCard({
   }
 
   function handlePointerMove(event: PointerEvent<HTMLButtonElement>): void {
+    // Skip hover effects on touch devices.
     if (event.pointerType === "touch") {
       return;
     }
 
+    // Keep only the latest pending animation-frame update
+    // to avoid excessive DOM writes during pointer movement.
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
     }
@@ -101,6 +106,8 @@ export default function CollectionCard({
     setIsHovered(false);
   }
 
+  // Cancel any scheduled animation frame when the component
+  // unmounts to avoid updating detached DOM elements.
   useEffect(() => {
     return () => {
       if (animationFrameRef.current !== null) {
@@ -162,4 +169,3 @@ export default function CollectionCard({
     </button>
   );
 }
-

@@ -6,6 +6,7 @@ export function getImageUrl(imageUrl?: string | null): string {
     return "";
   }
 
+  // Return absolute URLs directly without modification.
   if (
     imageUrl.startsWith("http://") ||
     imageUrl.startsWith("https://") ||
@@ -20,5 +21,7 @@ export function getImageUrl(imageUrl?: string | null): string {
     ? imageUrl
     : `/${imageUrl}`;
 
+  // Resolve application-relative image paths against
+  // the configured backend base URL.
   return `${normalizedBaseUrl}${normalizedImageUrl}`;
 }

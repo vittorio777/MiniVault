@@ -31,6 +31,8 @@ public class GenerationService
         _achievementService = achievementService;
         _backgroundRemovalService = backgroundRemovalService;
 
+        // Load API keys from application configuration first,
+        // then fall back to environment variables for deployment.
         var openaiApiKey =
             configuration["OpenAI:ApiKey"]
             ?? SysEnvironment.GetEnvironmentVariable("OPENAI_API_KEY")
@@ -45,16 +47,24 @@ public class GenerationService
                 "Google AI API key is missing."
             );
 
+        // OpenAI analyses the uploaded image and generates
+        // the collectible title, category, and description.
         _openaiClient = new ChatClient(
             model: "gpt-5.4-nano",
             apiKey: openaiApiKey
         );
 
+        // Google AI transforms the uploaded image
+        // into the miniature collectible artwork.
         _googleClient = new Client(
             apiKey: googleApiKey
         );
     }
 
+    /// <summary>
+    /// Processes an uploaded image, generates collectible metadata and artwork,
+    /// removes the background, and saves the completed collectible.
+    /// </summary>
     public async Task<Collectible> CaptureAsync(
         IFormFile file,
         int userId)
@@ -68,6 +78,8 @@ public class GenerationService
 
         ValidateUploadedImage(file);
 
+        // Track every stored file so incomplete generation attempts
+        // can be cleaned up if a later step fails.
         var originalImageUrl = string.Empty;
         var rawGeneratedImageUrl = string.Empty;
         var generatedImageUrl = string.Empty;
@@ -75,6 +87,8 @@ public class GenerationService
 
         try
         {
+            // Store the original upload before sending it
+            // to the external analysis and generation services.
             await using (var originalStream = file.OpenReadStream())
             {
                 originalImageUrl =
@@ -91,6 +105,8 @@ public class GenerationService
             rawGeneratedImageUrl =
                 await GenerateImageAsync(originalImageUrl);
 
+            // Produce a transparent-background version for display
+            // within the MiniVault collection interface.
             generatedImageUrl =
                 await _backgroundRemovalService
                     .RemoveBackgroundAsync(
@@ -108,12 +124,16 @@ public class GenerationService
 
             collectibleCreated = true;
 
+            // The intermediate image is no longer needed after
+            // the background-removed version has been saved.
             await DeleteImageIfExistsAsync(
                 rawGeneratedImageUrl
             );
 
             try
             {
+                // Achievement failure should not invalidate an otherwise
+                // successfully generated collectible.
                 await _achievementService
                     .UpdateAchievementsAfterCaptureAsync(
                         userId,
@@ -132,6 +152,8 @@ public class GenerationService
         }
         catch
         {
+            // Remove partially created files when generation fails
+            // before the collectible has been persisted.
             if (!collectibleCreated)
             {
                 await DeleteImageIfExistsAsync(
@@ -151,6 +173,9 @@ public class GenerationService
         }
     }
 
+    /// <summary>
+    /// Uses OpenAI vision analysis to generate structured collectible metadata.
+    /// </summary>
     private async Task<Collectible> GenerateInfoAsync(
         string originalImageUrl)
     {
@@ -199,6 +224,8 @@ public class GenerationService
                 ])
             };
 
+            // Request JSON output so the response can be deserialized
+            // directly into the metadata result model.
             var options = new ChatCompletionOptions
             {
                 ResponseFormat =
@@ -230,6 +257,8 @@ public class GenerationService
                 );
             }
 
+            // Apply safe fallback values when the model omits
+            // or returns empty metadata fields.
             return new Collectible
             {
                 Title =
@@ -259,9 +288,14 @@ public class GenerationService
         }
     }
 
+    /// <summary>
+    /// Generates and stores the miniature collectible image.
+    /// </summary>
     private async Task<string> GenerateImageAsync(
         string originalImageUrl)
     {
+        // Retry transient Google AI failures before rejecting
+        // the complete generation request.
         return await RetryAsync(async () =>
         {
             var localPath =
@@ -290,12 +324,17 @@ public class GenerationService
         });
     }
 
+    /// <summary>
+    /// Sends the source image and transformation instructions to Google AI.
+    /// </summary>
     private async Task<byte[]> GenerateGoogleImageBytesAsync(
         string localPath)
     {
         var imageBytes =
             await IOFile.ReadAllBytesAsync(localPath);
 
+        // The prompt standardizes the generated model's composition,
+        // background, scale, lighting, and visual identity.
         var prompt =
             "Transform the original subject into a premium collectible figure while preserving the recognizable identity of the original subject. " +
             "Professionally sculpted with crisp details and a high-quality hand-painted resin finish. " +
@@ -365,6 +404,8 @@ public class GenerationService
             );
         }
 
+        // The response may contain both explanatory text and image data.
+        // Only the first valid image payload is returned.
         foreach (var part in parts)
         {
             if (!string.IsNullOrWhiteSpace(part.Text))
@@ -386,9 +427,14 @@ public class GenerationService
         );
     }
 
+    /// <summary>
+    /// Retries an asynchronous operation using exponential backoff.
+    /// </summary>
     private static async Task<T> RetryAsync<T>(
         Func<Task<T>> action)
     {
+        // Increasing delays reduce immediate repeated pressure
+        // on a temporarily unavailable external service.
         var delays = new[]
         {
             TimeSpan.FromSeconds(1),
@@ -430,6 +476,8 @@ public class GenerationService
 
                 Console.WriteLine(ex.Message);
 
+                // Do not retry permanent errors or continue
+                // after all configured attempts have been used.
                 if (!retryable || !hasMoreAttempts)
                 {
                     break;
@@ -448,11 +496,16 @@ public class GenerationService
         );
     }
 
+    /// <summary>
+    /// Determines whether a Google AI error is likely to be temporary.
+    /// </summary>
     private static bool IsRetryableGoogleError(
         Exception ex)
     {
         var text = ex.ToString();
 
+        // Retry rate limits, server failures, timeouts,
+        // and temporary service-capacity errors.
         return
             text.Contains(
                 "429",
@@ -492,6 +545,9 @@ public class GenerationService
             );
     }
 
+    /// <summary>
+    /// Attempts to delete a stored image without masking the original failure.
+    /// </summary>
     private async Task DeleteImageIfExistsAsync(
         string imageUrl)
     {
@@ -506,10 +562,14 @@ public class GenerationService
         }
         catch
         {
-            // Ignore cleanup failure.
+            // Cleanup is best-effort and must not replace
+            // the original generation exception.
         }
     }
 
+    /// <summary>
+    /// Validates the uploaded file type and file size.
+    /// </summary>
     private static void ValidateUploadedImage(IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -547,6 +607,9 @@ public class GenerationService
         }
     }
 
+    /// <summary>
+    /// Maps a supported image extension to its MIME type.
+    /// </summary>
     private static string GetMimeType(
         string path)
     {
@@ -566,6 +629,8 @@ public class GenerationService
         };
     }
 
+    // Internal model matching the JSON structure returned
+    // by the OpenAI image analysis request.
     private sealed class ImageAnalysisResult
     {
         public string Title { get; set; } =

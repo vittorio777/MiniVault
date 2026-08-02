@@ -11,6 +11,7 @@ namespace MiniVault.Services;
 
 public class UserService
 {
+    // PBKDF2 configuration used for newly created and upgraded passwords.
     private const int SaltSize = 16;
     private const int HashSize = 32;
     private const int Iterations = 100_000;
@@ -26,9 +27,13 @@ public class UserService
         _achievementService = achievementService;
     }
 
+    /// <summary>
+    /// Creates a new user and initializes their achievement records.
+    /// </summary>
     public async Task<UserResponse> RegisterAsync(
         RegisterRequest request)
     {
+        // Normalize user input before validating uniqueness.
         var nickname = request.Nickname.Trim();
         var email = request.Email.Trim().ToLowerInvariant();
 
@@ -77,6 +82,8 @@ public class UserService
             );
         }
 
+        // User creation and achievement initialization must either
+        // both succeed or both be rolled back.
         await using var transaction =
             await _context.Database
                 .BeginTransactionAsync();
@@ -112,6 +119,9 @@ public class UserService
         }
     }
 
+    /// <summary>
+    /// Validates user credentials and upgrades legacy password hashes when required.
+    /// </summary>
     public async Task<UserResponse> LoginAsync(
         LoginRequest request)
     {
@@ -123,6 +133,8 @@ public class UserService
                     storedUser.Nickname == nickname
             );
 
+        // Return the same message for unknown users and invalid passwords
+        // to avoid revealing whether an account exists.
         if (user is null)
         {
             throw new InvalidOperationException(
@@ -143,6 +155,8 @@ public class UserService
             );
         }
 
+        // Transparently migrate older SHA-256 hashes to salted PBKDF2
+        // after the user successfully authenticates.
         if (usesLegacyHash)
         {
             user.PasswordHash =
@@ -151,6 +165,8 @@ public class UserService
             await _context.SaveChangesAsync();
         }
 
+        // Ensure older accounts also receive any achievement records
+        // introduced after their original registration.
         await _achievementService
             .InitializeUserAchievementsAsync(
                 user.Id
@@ -159,6 +175,8 @@ public class UserService
         return ToResponse(user);
     }
 
+    // Convert the database entity into the limited user data
+    // that is safe to return to the client.
     private static UserResponse ToResponse(
         User user)
     {
@@ -170,6 +188,8 @@ public class UserService
         };
     }
 
+    // Generate a unique random salt and derive the password hash
+    // using PBKDF2 with SHA-256.
     private static string HashPassword(
         string password)
     {
@@ -187,6 +207,8 @@ public class UserService
                 HashSize
             );
 
+        // Store the algorithm, iteration count, salt, and derived hash
+        // so the password can be verified and upgraded later.
         return string.Join(
             ".",
             "PBKDF2",
@@ -196,6 +218,8 @@ public class UserService
         );
     }
 
+    // Detect the stored hash format and select the matching
+    // verification method.
     private static bool VerifyPassword(
         string password,
         string storedHash,
@@ -261,6 +285,8 @@ public class UserService
                     expectedHash.Length
                 );
 
+            // Fixed-time comparison reduces timing information
+            // that could otherwise leak details about the hash.
             return CryptographicOperations
                 .FixedTimeEquals(
                     actualHash,
@@ -269,10 +295,13 @@ public class UserService
         }
         catch (FormatException)
         {
+            // Treat malformed stored password data as an invalid password.
             return false;
         }
     }
 
+    // Verify passwords created by the previous unsalted SHA-256 implementation.
+    // Successful legacy logins are upgraded to PBKDF2 in LoginAsync.
     private static bool VerifyLegacyPassword(
         string password,
         string storedHash)

@@ -7,6 +7,9 @@ using MiniVault.Services;
 
 namespace MiniVault.Controllers;
 
+/// <summary>
+/// Provides AI image generation endpoints.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -19,12 +22,16 @@ public class GenerationController : ControllerBase
         _generationService = generationService;
     }
 
+    /// <summary>
+    /// Uploads an image and generates a miniature collectible.
+    /// </summary>
     [HttpPost("capture")]
     public async Task<ActionResult<CollectibleResponse>> CaptureImage(
         IFormFile file)
     {
         try
         {
+            // Read the authenticated user's ID from the validated JWT.
             var userId = User.GetUserId();
 
             var collectible = await _generationService.CaptureAsync(
@@ -34,6 +41,8 @@ public class GenerationController : ControllerBase
 
             return Ok(ToResponse(collectible));
         }
+        // Return user-friendly responses for expected validation
+        // and authorization failures.
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
@@ -48,6 +57,7 @@ public class GenerationController : ControllerBase
         }
     }
 
+    // Convert the domain model into the API response model.
     private static CollectibleResponse ToResponse(
         Collectible collectible)
     {

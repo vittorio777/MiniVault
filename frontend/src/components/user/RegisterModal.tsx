@@ -23,6 +23,7 @@ export default function RegisterModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Clear previous errors whenever the modal is closed.
   useEffect(() => {
     if (!show) {
       setError("");
@@ -30,6 +31,8 @@ export default function RegisterModal({
   }, [show]);
 
   async function handleRegister(): Promise<void> {
+    // Perform basic client-side validation before sending
+    // the registration request to the API.
     if (!nickname.trim() || !email.trim() || !password) {
       setError("Please complete all fields.");
       return;
@@ -45,8 +48,11 @@ export default function RegisterModal({
         password,
       });
 
+      // Notify the parent component so it can update
+      // the authenticated user state immediately.
       onRegisterSuccess(response.user);
 
+      // Reset the form after successful registration.
       setNickname("");
       setEmail("");
       setPassword("");
@@ -70,6 +76,8 @@ export default function RegisterModal({
   }
 
   function handleClose(): void {
+    // Keep the modal open while registration is in progress
+    // to prevent duplicate or interrupted submissions.
     if (loading) {
       return;
     }
@@ -270,4 +278,3 @@ export default function RegisterModal({
     </Modal>
   );
 }
-

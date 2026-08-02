@@ -28,6 +28,8 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
     body: JSON.stringify(request),
   });
 
+  // Persist the authenticated user and JWT
+  // for subsequent API requests.
   saveAuth(response);
 
   return response;
@@ -41,6 +43,8 @@ export async function register(
     body: JSON.stringify(request),
   });
 
+  // Automatically authenticate the user
+  // after successful registration.
   saveAuth(response);
 
   return response;
@@ -56,6 +60,8 @@ export function getStoredUser(): UserResponse | null {
   try {
     return JSON.parse(storedUser) as UserResponse;
   } catch {
+    // Remove invalid cached user data to avoid
+    // repeated parsing failures.
     localStorage.removeItem("user");
     return null;
   }
@@ -70,11 +76,14 @@ export function isAuthenticated(): boolean {
 }
 
 export function logout(): void {
+  // Clear all locally stored authentication data.
   localStorage.removeItem("token");
   localStorage.removeItem("user");
 }
 
 function saveAuth(response: AuthResponse): void {
+  // Store the JWT and user profile for
+  // future authenticated sessions.
   localStorage.setItem("token", response.token);
   localStorage.setItem("user", JSON.stringify(response.user));
 }
