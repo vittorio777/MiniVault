@@ -22,6 +22,11 @@ export interface AuthResponse {
   user: UserResponse;
 }
 
+const DEMO_LOGIN_REQUEST: LoginRequest = {
+  nickname: "Jerry",
+  password: "123456789",
+};
+
 export async function login(request: LoginRequest): Promise<AuthResponse> {
   const response = await apiRequest<AuthResponse>("/api/users/login", {
     method: "POST",
@@ -33,6 +38,10 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
   saveAuth(response);
 
   return response;
+}
+
+export function loginAsDemo(): Promise<AuthResponse> {
+  return login(DEMO_LOGIN_REQUEST);
 }
 
 export async function register(

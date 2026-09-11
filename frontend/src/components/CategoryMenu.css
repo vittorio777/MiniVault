@@ -15,7 +15,7 @@
   gap: 11px;
   border: 0;
   border-radius: 8px;
-  color: #89837c;
+  color: #6f7a8c;
   background: transparent;
   cursor: pointer;
   text-align: left;
@@ -23,8 +23,8 @@
 }
 
 .category-menu__item--selected {
-  color: #2f281f;
-  background: #efefec;
+  color: #172033;
+  background: rgba(218, 234, 249, 0.72);
 }
 
 .category-menu__indicator {
@@ -36,7 +36,7 @@
 }
 
 .category-menu__indicator--selected {
-  background: #9a7138;
+  background: #5f91c4;
 }
 
 .category-menu__label {

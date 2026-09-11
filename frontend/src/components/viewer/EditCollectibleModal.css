@@ -1,10 +1,12 @@
 .edit-collectible-modal {
   width: 100%;
   overflow: hidden;
-  border: 1px solid #e6e6e3;
+  border: 1px solid #d9e4ef;
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 18px 50px rgba(35, 31, 27, 0.1);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(116, 165, 211, 0.14), transparent 34%),
+    #ffffff;
+  box-shadow: 0 22px 58px rgba(23, 32, 51, 0.13);
   font-family: "Inter", "Segoe UI", sans-serif;
 }
 
@@ -13,12 +15,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #eeeeeb;
+  border-bottom: 1px solid #e4edf6;
 }
 
 .edit-collectible-modal__title {
   margin: 0;
-  color: #2f281f;
+  color: #172033;
   font-size: 22px;
   font-weight: 650;
   letter-spacing: -0.02em;
@@ -32,15 +34,15 @@
   place-items: center;
   border: 0;
   border-radius: 8px;
-  color: #88847f;
+  color: #7a8798;
   background: transparent;
   cursor: pointer;
   transition: color 160ms ease, background 160ms ease;
 }
 
 .edit-collectible-modal__close-button:hover:not(:disabled) {
-  color: #3f3b36;
-  background: #f4f4f1;
+  color: #172033;
+  background: #eef6fd;
 }
 
 .edit-collectible-modal__fields {
@@ -61,13 +63,13 @@
 }
 
 .edit-collectible-modal__label {
-  color: #4b4742;
+  color: #172033;
   font-size: 12px;
   font-weight: 600;
 }
 
 .edit-collectible-modal__optional {
-  color: #a09c96;
+  color: #8d99aa;
   font-size: 10px;
 }
 
@@ -76,10 +78,10 @@
   min-height: 44px;
   padding: 0 12px;
   box-sizing: border-box;
-  border: 1px solid #dededb;
+  border: 1px solid #d7dfe9;
   border-radius: 9px;
   outline: none;
-  color: #2f281f;
+  color: #172033;
   background: #ffffff;
   font-family: "Inter", "Segoe UI", sans-serif;
   font-size: 13px;
@@ -87,8 +89,8 @@
 }
 
 .edit-collectible-modal__input:focus {
-  border-color: #a9a59f;
-  box-shadow: 0 0 0 3px rgba(70, 64, 56, 0.06);
+  border-color: #74a5d3;
+  box-shadow: 0 0 0 3px rgba(116, 165, 211, 0.16);
 }
 
 .edit-collectible-modal__input:disabled {
@@ -105,7 +107,7 @@
 }
 
 .edit-collectible-modal__count {
-  color: #aaa6a0;
+  color: #8d99aa;
   font-size: 9px;
   text-align: right;
 }
@@ -115,7 +117,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  border-top: 1px solid #eeeeeb;
+  border-top: 1px solid #e4edf6;
 }
 
 .edit-collectible-modal__secondary-button,
@@ -130,25 +132,25 @@
 }
 
 .edit-collectible-modal__secondary-button {
-  border: 1px solid #dededb;
-  color: #4d4944;
+  border: 1px solid #d7dfe9;
+  color: #172033;
   background: #ffffff;
 }
 
 .edit-collectible-modal__secondary-button:hover:not(:disabled) {
-  background: #f7f7f5;
+  background: #eef6fd;
 }
 
 .edit-collectible-modal__primary-button {
   padding-inline: 17px;
-  border: 1px solid #2f281f;
+  border: 1px solid #5f91c4;
   color: #ffffff;
-  background: #2f281f;
+  background: linear-gradient(180deg, #6fa1d2 0%, #4e82b8 100%);
 }
 
 .edit-collectible-modal__primary-button:hover:not(:disabled) {
-  border-color: #1f1a15;
-  background: #1f1a15;
+  border-color: #4778ab;
+  background: linear-gradient(180deg, #6598cb 0%, #4778ab 100%);
 }
 
 .edit-collectible-modal__disabled {

@@ -3,13 +3,13 @@
   height: 100%;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
-  gap: clamp(28px, 5vw, 64px);
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
+  gap: clamp(32px, 4.5vw, 76px);
   align-items: center;
   padding: clamp(18px, 2.5vh, 28px);
   overflow: hidden;
   border-radius: 16px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .collectible-details__showcase {
@@ -19,9 +19,11 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 1px solid #e8e8e5;
+  border: 1px solid #d9e4ef;
   border-radius: 16px;
-  background: #f1f1ed;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(116, 165, 211, 0.18), transparent 36%),
+    #f2f8fd;
   cursor: default;
   transition: transform 180ms ease;
   transform-style: preserve-3d;
@@ -34,8 +36,8 @@
 .collectible-details__image {
   display: block;
   width: 100%;
-  max-width: 560px;
-  max-height: 430px;
+  max-width: 760px;
+  max-height: 500px;
   object-fit: contain;
   filter: drop-shadow(0 22px 24px rgba(0, 0, 0, 0.13));
   opacity: 0;
@@ -55,7 +57,7 @@
   box-sizing: border-box;
   border: 2px solid rgba(255, 255, 255, 0.92);
   border-radius: 50%;
-  background-color: #f1f1ed;
+  background-color: #f2f8fd;
   background-repeat: no-repeat;
   background-size: 350%;
   box-shadow:
@@ -78,7 +80,7 @@
   gap: 7px;
   border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 999px;
-  color: #888888;
+  color: #5e6b7d;
   background: rgba(255, 255, 255, 0.7);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(10px);
@@ -95,7 +97,7 @@
 }
 
 .collectible-details__zoom-button--active {
-  color: #333333;
+  color: #172033;
   background: rgba(255, 255, 255, 0.92);
 }
 
@@ -109,7 +111,7 @@
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  color: #777777;
+  color: #6f7a8c;
   font-size: 13px;
   font-weight: 500;
 }
@@ -119,7 +121,7 @@
   height: 7px;
   display: block;
   border-radius: 50%;
-  background: #9a7138;
+  background: #5f91c4;
   animation: collectible-loading-pulse 900ms ease-in-out infinite;
 }
 
@@ -147,10 +149,10 @@
   padding: 0 10px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #dededb;
+  border: 1px solid #d7dfe9;
   border-radius: 8px;
-  color: #555555;
-  background: #f7f7f5;
+  color: #4e82b8;
+  background: #eef6fd;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -160,26 +162,26 @@
 .collectible-details__title {
   max-width: 520px;
   margin: 0;
-  color: #202020;
+  color: #172033;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: clamp(32px, 3.8vw, 46px);
   font-weight: 700;
   line-height: 1.12;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
 .collectible-details__description {
   max-width: 500px;
   margin: 22px 0 0;
-  color: #666666;
+  color: #5e6b7d;
   font-size: 16px;
   line-height: 1.8;
 }
 
 .collectible-details__added-text {
   margin: 34px 0 0;
-  color: #a0a0a0;
+  color: #8d99aa;
   font-size: 12px;
   font-weight: 400;
   line-height: 1.5;
@@ -193,7 +195,7 @@
   display: flex;
   align-items: center;
   gap: 22px;
-  border-top: 1px solid #eeeeeb;
+  border-top: 1px solid #e4edf6;
 }
 
 .collectible-details__edit-button,
@@ -210,15 +212,15 @@
 }
 
 .collectible-details__edit-button {
-  color: #8c8c8c;
+  color: #5f91c4;
 }
 
 .collectible-details__edit-button:hover {
-  color: #333333;
+  color: #172033;
 }
 
 .collectible-details__delete-button {
-  color: #a2a2a2;
+  color: #9aa7b8;
 }
 
 .collectible-details__delete-button:hover {

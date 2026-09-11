@@ -7,6 +7,7 @@ import {
   getStoredUser,
   isAuthenticated,
   login,
+  loginAsDemo,
   logout,
   register,
   type AuthResponse,
@@ -74,6 +75,26 @@ describe("authApi", () => {
 
       expect(localStorage.getItem("token")).toBeNull();
       expect(localStorage.getItem("user")).toBeNull();
+    });
+  });
+
+  describe("loginAsDemo", () => {
+    it("logs in with the demo account", async () => {
+      mockedApiRequest.mockResolvedValue(authResponse);
+
+      const result = await loginAsDemo();
+
+      expect(mockedApiRequest).toHaveBeenCalledWith("/api/users/login", {
+        method: "POST",
+        body: JSON.stringify({
+          nickname: "Jerry",
+          password: "123456789",
+        }),
+      });
+
+      expect(result).toEqual(authResponse);
+      expect(getStoredToken()).toBe("test-jwt-token");
+      expect(getStoredUser()).toEqual(authResponse.user);
     });
   });
 

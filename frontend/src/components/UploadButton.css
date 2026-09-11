@@ -1,18 +1,19 @@
 
 .upload-button{
-height:40px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
-border:1px solid #dededb;border-radius:9px;color:#3f3a35;background:#fff;cursor:pointer;
-font-family:"Inter","Segoe UI",sans-serif;font-size:14px;font-weight:600;line-height:1.4;
-transition:all .16s ease;
+height:42px;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+border:1px solid #5f91c4;border-radius:10px;color:#fff;background:linear-gradient(180deg,#6fa1d2 0%,#4e82b8 100%);cursor:pointer;
+box-shadow:0 10px 22px rgba(71,126,180,.22);
+font-family:"Inter","Segoe UI",sans-serif;font-size:14px;font-weight:700;line-height:1.4;
+transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
 }
 .upload-button:hover:not(:disabled){
-background:#fafafa;border-color:#d4d4d1;transform:translateY(-1px);
+transform:translateY(-1px);box-shadow:0 14px 28px rgba(71,126,180,.28);filter:saturate(1.06);
 }
 .upload-button--disabled{
-color:#8f8a84;background:#f1f1ee;cursor:wait;opacity:.8;
+color:#fff;background:#8eb3d6;cursor:wait;opacity:.72;
 }
 .upload-button__spinner{
-width:15px;height:15px;flex-shrink:0;border:2px solid #d8d8d4;border-top-color:#9a7138;
+width:15px;height:15px;flex-shrink:0;border:2px solid rgba(255,255,255,.38);border-top-color:#fff;
 border-radius:50%;animation:upload-button-spin .7s linear infinite;
 }
 @keyframes upload-button-spin{to{transform:rotate(360deg)}}

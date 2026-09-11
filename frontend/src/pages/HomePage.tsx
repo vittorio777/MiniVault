@@ -5,6 +5,7 @@ import { getCollectibles } from "@/api/collectiblesApi";
 import {
   getStoredToken,
   getStoredUser,
+  loginAsDemo,
   logout,
   type UserResponse,
 } from "@/api/authApi";
@@ -45,6 +46,7 @@ export default function HomePage() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoginLoading, setIsDemoLoginLoading] = useState(false);
   const [error, setError] = useState("");
 
   // Reload the collection whenever the authenticated user changes.
@@ -86,6 +88,25 @@ export default function HomePage() {
 
     setShowLoginModal(false);
     setShowRegisterModal(false);
+  }
+
+  async function handleDemoLogin(): Promise<void> {
+    try {
+      setIsDemoLoginLoading(true);
+      setError("");
+
+      const response = await loginAsDemo();
+
+      handleAuthenticationSuccess(response.user);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to open the demo account.",
+      );
+    } finally {
+      setIsDemoLoginLoading(false);
+    }
   }
 
   function handleLogout(): void {
@@ -216,13 +237,33 @@ export default function HomePage() {
               place.
             </p>
 
-            <button
-              type="button"
-              className="home-page__secondary-button"
-              onClick={() => setShowRegisterModal(true)}
-            >
-              Create an account
-            </button>
+            <div className="home-page__guest-actions">
+              <button
+                type="button"
+                className="home-page__secondary-button"
+                onClick={() => setShowRegisterModal(true)}
+                disabled={isDemoLoginLoading}
+              >
+                Create an account
+              </button>
+
+              <button
+                type="button"
+                className="home-page__demo-button"
+                onClick={() => void handleDemoLogin()}
+                disabled={isDemoLoginLoading}
+              >
+                {isDemoLoginLoading
+                  ? "Opening demo..."
+                  : "Continue with demo account"}
+              </button>
+            </div>
+
+            {error && (
+              <p className="home-page__guest-error" role="alert">
+                {error}
+              </p>
+            )}
           </div>
         </section>
       ) : (

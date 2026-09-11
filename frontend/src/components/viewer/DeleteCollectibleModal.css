@@ -1,10 +1,12 @@
 .delete-collectible-modal {
   width: 100%;
   overflow: hidden;
-  border: 1px solid #e6e6e3;
+  border: 1px solid #d9e4ef;
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 18px 50px rgba(35, 31, 27, 0.1);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(116, 165, 211, 0.14), transparent 34%),
+    #ffffff;
+  box-shadow: 0 22px 58px rgba(23, 32, 51, 0.13);
   font-family: "Inter", "Segoe UI", sans-serif;
 }
 
@@ -13,12 +15,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #eeeeeb;
+  border-bottom: 1px solid #e4edf6;
 }
 
 .delete-collectible-modal__title {
   margin: 0;
-  color: #2f281f;
+  color: #172033;
   font-size: 18px;
   font-weight: 650;
   letter-spacing: -0.02em;
@@ -32,15 +34,15 @@
   place-items: center;
   border: 0;
   border-radius: 8px;
-  color: #88847f;
+  color: #7a8798;
   background: transparent;
   cursor: pointer;
   transition: color 160ms ease, background 160ms ease;
 }
 
 .delete-collectible-modal__close-button:hover:not(:disabled) {
-  color: #3f3b36;
-  background: #f4f4f1;
+  color: #172033;
+  background: #eef6fd;
 }
 
 .delete-collectible-modal__body {
@@ -49,7 +51,7 @@
 
 .delete-collectible-modal__message {
   margin: 0;
-  color: #66625d;
+  color: #5e6b7d;
   font-size: 14px;
   font-weight: 400;
   line-height: 1.7;
@@ -60,7 +62,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  border-top: 1px solid #eeeeeb;
+  border-top: 1px solid #e4edf6;
 }
 
 .delete-collectible-modal__secondary-button,
@@ -75,13 +77,13 @@
 }
 
 .delete-collectible-modal__secondary-button {
-  border: 1px solid #dededb;
-  color: #4d4944;
+  border: 1px solid #d7dfe9;
+  color: #172033;
   background: #ffffff;
 }
 
 .delete-collectible-modal__secondary-button:hover:not(:disabled) {
-  background: #f7f7f5;
+  background: #eef6fd;
 }
 
 .delete-collectible-modal__delete-button {

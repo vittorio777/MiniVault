@@ -1,24 +1,24 @@
 .user-button__login {
-  height: 46px;
-  padding: 0 18px;
+  height: 54px;
+  padding: 0 22px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid #dddddd;
-  border-radius: 12px;
-  color: #333333;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  gap: 12px;
+  border: 1px solid #d8dde6;
+  border-radius: 13px;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 10px 28px rgba(23, 32, 51, 0.08);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
 }
 
 .user-button__login:hover {
   transform: translateY(-1px);
-  border-color: #d1d1d1;
-  box-shadow: 0 7px 18px rgba(0, 0, 0, 0.07);
+  border-color: #c8d0dc;
+  box-shadow: 0 14px 32px rgba(23, 32, 51, 0.11);
 }
 
 .user-button__container {
@@ -27,16 +27,16 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1px solid #e5e5e5;
+  border: 1px solid #d9e4ef;
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.035);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 8px 22px rgba(23, 32, 51, 0.06);
 }
 
 .user-button__name {
   max-width: 140px;
   overflow: hidden;
-  color: #333333;
+  color: #172033;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
@@ -48,7 +48,7 @@
   width: 1px;
   height: 18px;
   display: block;
-  background: #e9e9e9;
+  background: #e4edf6;
 }
 
 .user-button__logout {
@@ -59,21 +59,21 @@
   place-items: center;
   border: none;
   border-radius: 9px;
-  color: #777777;
+  color: #6f7a8c;
   background: transparent;
   cursor: pointer;
   transition: color 160ms ease, background 160ms ease;
 }
 
 .user-button__logout:hover {
-  color: #333333;
-  background: #f4f4f4;
+  color: #172033;
+  background: #eef6fd;
 }
 
 @media (max-width: 520px) {
   .user-button__login {
-    height: 40px;
-    padding: 0 13px;
+    height: 42px;
+    padding: 0 14px;
     gap: 8px;
     border-radius: 10px;
     font-size: 13px;

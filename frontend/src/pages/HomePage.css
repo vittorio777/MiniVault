@@ -1,8 +1,28 @@
 .home-page {
   min-height: 100vh;
   overflow-x: hidden;
-  color: #2f281f;
-  background: #f4f4f2;
+  color: #172033;
+  background:
+    radial-gradient(
+      circle at -6% 22%,
+      rgba(116, 165, 211, 0.07) 0%,
+      rgba(116, 165, 211, 0.04) 14%,
+      rgba(116, 165, 211, 0.015) 25%,
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at 96% 77%,
+      rgba(116, 165, 211, 0.08) 0%,
+      rgba(116, 165, 211, 0.045) 16%,
+      rgba(116, 165, 211, 0.018) 29%,
+      transparent 41%
+    ),
+    radial-gradient(
+      circle at 48% 18%,
+      rgba(116, 165, 211, 0.03) 0%,
+      transparent 18%
+    ),
+    linear-gradient(180deg, #ffffff 0%, #fbfdff 55%, #ffffff 100%);
   font-family:
     "Inter",
     "Segoe UI",
@@ -12,9 +32,35 @@
     sans-serif;
 }
 
+.home-page:has(.home-page__guest-section) {
+  background:
+    radial-gradient(
+      circle at -6% 22%,
+      rgba(116, 165, 211, 0.26) 0%,
+      rgba(116, 165, 211, 0.16) 16%,
+      rgba(116, 165, 211, 0.06) 27%,
+      transparent 39%
+    ),
+    radial-gradient(
+      circle at 96% 77%,
+      rgba(116, 165, 211, 0.3) 0%,
+      rgba(116, 165, 211, 0.17) 18%,
+      rgba(116, 165, 211, 0.07) 31%,
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 48% 18%,
+      rgba(116, 165, 211, 0.12) 0%,
+      transparent 22%
+    ),
+    linear-gradient(180deg, #ffffff 0%, #fbfdff 55%, #ffffff 100%);
+}
+
 .home-page__header {
   height: 96px;
   padding: 0 24px;
+  position: relative;
+  z-index: 2;
 }
 
 .home-page__header-inner {
@@ -32,7 +78,7 @@
   align-items: center;
   gap: 12px;
   border: 0;
-  color: #9a7138;
+  color: #5f8fbd;
   background: transparent;
   cursor: pointer;
 }
@@ -46,11 +92,11 @@
 }
 
 .home-page__brand-name {
-  color: #2f281f;
+  color: #1a2435;
   font-family: Georgia, "Times New Roman", serif;
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
@@ -97,7 +143,7 @@
 
 .home-page__collection-title {
   margin: 0;
-  color: #232323;
+  color: #172033;
   font-size: 36px;
   font-weight: 700;
   line-height: 1.05;
@@ -109,7 +155,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #8a8177;
+  color: #6f7a8c;
   font-size: 14px;
   line-height: 1.5;
 }
@@ -127,15 +173,15 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #8a857f;
+  color: #6f7a8c;
 }
 
 .home-page__spinner {
   width: 28px;
   height: 28px;
   display: block;
-  border: 2px solid #e2e2df;
-  border-top-color: #9a7138;
+  border: 2px solid #d9e7f4;
+  border-top-color: #5f91c4;
   border-radius: 50%;
   animation: home-page-spin 700ms linear infinite;
 }
@@ -153,9 +199,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  border: 1px solid #e5d9d4;
+  border: 1px solid #d9e4ef;
   border-radius: 12px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 30px rgba(23, 32, 51, 0.06);
 }
 
 .home-page__error-title {
@@ -175,10 +222,10 @@
   min-height: 36px;
   padding: 0 14px;
   flex-shrink: 0;
-  border: 1px solid #dededb;
+  border: 1px solid #d7dfe9;
   border-radius: 8px;
-  color: #4d4944;
-  background: #ffffff;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.9);
   cursor: pointer;
   font-size: 12px;
   font-weight: 600;
@@ -194,44 +241,108 @@
 
 .home-page__guest-section {
   min-height: calc(100vh - 96px);
-  padding: 80px 24px;
+  padding: 70px 24px 110px;
   display: grid;
   place-items: center;
+  position: relative;
+  isolation: isolate;
 }
 
 .home-page__guest-content {
   width: min(720px, 100%);
+  margin-top: -26px;
   text-align: center;
 }
 
 .home-page__guest-title {
   margin: 0;
-  color: #232323;
-  font-size: 58px;
-  font-weight: 700;
-  line-height: 1.05;
-  letter-spacing: -2px;
+  color: #172033;
+  font-size: clamp(44px, 5vw, 68px);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: 0;
 }
 
 .home-page__guest-description {
   max-width: 540px;
-  margin: 22px auto 0;
-  color: #77736e;
-  font-size: 16px;
-  line-height: 1.65;
+  margin: 24px auto 0;
+  color: #6f7a8c;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.home-page__guest-actions {
+  margin-top: 36px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .home-page__secondary-button {
-  height: 46px;
-  margin-top: 34px;
-  padding: 0 20px;
-  border: 1px solid #ddddda;
-  border-radius: 10px;
-  color: #333333;
-  background: #ffffff;
+  min-width: 186px;
+  height: 54px;
+  padding: 0 24px;
+  border: 1px solid #d7dce5;
+  border-radius: 11px;
+  color: #172033;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: 0 8px 24px rgba(23, 32, 51, 0.06);
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.home-page__demo-button {
+  min-width: 268px;
+  height: 54px;
+  padding: 0 26px;
+  border: 1px solid #5f91c4;
+  border-radius: 11px;
+  color: #ffffff;
+  background: linear-gradient(180deg, #6fa1d2 0%, #4e82b8 100%);
+  box-shadow: 0 10px 24px rgba(71, 126, 180, 0.26);
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    filter 160ms ease;
+}
+
+.home-page__secondary-button:hover,
+.home-page__demo-button:hover {
+  transform: translateY(-1px);
+}
+
+.home-page__secondary-button:hover {
+  border-color: #c6cfdd;
+  box-shadow: 0 12px 28px rgba(23, 32, 51, 0.08);
+}
+
+.home-page__demo-button:hover {
+  box-shadow: 0 14px 32px rgba(71, 126, 180, 0.32);
+  filter: saturate(1.06);
+}
+
+.home-page__secondary-button:disabled,
+.home-page__demo-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  transform: none;
+}
+
+.home-page__guest-error {
+  max-width: 420px;
+  margin: 16px auto 0;
+  color: #9b3f35;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 @keyframes home-page-spin {
@@ -306,7 +417,7 @@
 
   .home-page__guest-section {
     min-height: calc(100vh - 82px);
-    padding: 60px 20px;
+    padding: 56px 20px 84px;
   }
 
   .home-page__guest-title {
@@ -357,10 +468,21 @@
 
   .home-page__guest-title {
     font-size: 38px;
-    letter-spacing: -1.4px;
+    line-height: 1.08;
   }
 
   .home-page__guest-description {
     font-size: 15px;
+  }
+
+  .home-page__guest-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .home-page__secondary-button,
+  .home-page__demo-button {
+    min-width: 0;
+    width: 100%;
   }
 }
