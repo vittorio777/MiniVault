@@ -6,13 +6,16 @@ public class LocalImageStorageService : IImageStorageService
 
     public LocalImageStorageService(IWebHostEnvironment environment)
     {
-        // Use wwwroot during local development and Azure's persistent
-        // /home directory in production so uploaded files survive deployments.
-        _uploadsDirectory = environment.IsDevelopment()
-            ? Path.Combine(environment.ContentRootPath, "wwwroot", "uploads")
-            : Path.Combine("/home", "data", "minivault", "uploads");
+        _uploadsDirectory = GetUploadsDirectory(environment);
 
         Directory.CreateDirectory(_uploadsDirectory);
+    }
+
+    public static string GetUploadsDirectory(IWebHostEnvironment environment)
+    {
+        return environment.IsDevelopment()
+            ? Path.Combine(environment.ContentRootPath, "wwwroot", "uploads")
+            : Path.Combine("/home", "data", "minivault", "uploads");
     }
 
     /// <summary>

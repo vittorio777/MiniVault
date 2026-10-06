@@ -2,10 +2,10 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.FileProviders;
 
 using MiniVault.Api.Settings;
 using MiniVault.Data;
+using MiniVault.Extensions;
 using MiniVault.Services;
 using MiniVault.Services.Storage;
 using Scalar.AspNetCore;
@@ -135,33 +135,7 @@ app.MapScalarApiReference();
 
 app.UseCors("AllowFrontend");
 
-if (app.Environment.IsDevelopment())
-{
-    // During local development, static files are served from wwwroot.
-    app.UseStaticFiles();
-}
-else
-{
-    // Azure App Service deployments may replace files inside wwwroot.
-    // Store uploaded images under /home so that they persist across deployments.
-    var uploadsDirectory = Path.Combine(
-        "/home",
-        "data",
-        "minivault",
-        "uploads"
-    );
-
-    Directory.CreateDirectory(uploadsDirectory);
-
-    // Map requests beginning with /uploads to the persistent Azure directory.
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(
-            uploadsDirectory
-        ),
-        RequestPath = "/uploads"
-    });
-}
+app.UseUploadedImages();
 
 // Authentication must run before authorization so that
 // the current user's identity can be established from the JWT.
