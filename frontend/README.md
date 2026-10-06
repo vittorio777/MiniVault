@@ -4,7 +4,9 @@ React 19 and TypeScript client built with Vite. See the [project README](../READ
 
 ## Local Development
 
-Use Node.js 22.13 or newer within the 22.x series, with npm. Start the local backend at `http://localhost:5158` using the root guide, then run these commands from this directory (PowerShell 7):
+Follow the [step-by-step setup guide](../README.md#getting-started) to install prerequisites, prepare PostgreSQL, and start the backend. The frontend needs Node.js 22.13 or newer within the 22.x series, with npm.
+
+Once the backend health check at `http://localhost:5158/api/health` shows `MiniVault API Running`, open a second PowerShell 7 terminal in this directory:
 
 ```powershell
 Copy-Item .env.example .env
@@ -12,7 +14,7 @@ npm ci
 npm run dev -- --host localhost --port 5173 --strictPort
 ```
 
-The copy step is for a fresh clone; preserve an existing `.env` with your own configuration. Open `http://localhost:5173`, which matches the backend's current CORS policy. Local setup still needs fresh-clone verification.
+The copy step is for a fresh clone; preserve an existing `.env` with your own configuration. Check that it contains `VITE_API_BASE_URL=http://localhost:5158`. Keep the backend and frontend terminals open, then visit `http://localhost:5173` and create a local account. Local setup still needs fresh-clone verification.
 
 ## Configuration
 

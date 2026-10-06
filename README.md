@@ -96,83 +96,183 @@ MiniVault/
 
 ## Getting Started
 
-The frontend and backend run directly from source and connect to a local PostgreSQL database. These instructions follow the current repository configuration; fresh-clone verification is still pending.
+This guide runs the backend and frontend directly from source, using a local PostgreSQL database. The commands below are for **PowerShell 7 on Windows**. Fresh-clone verification is still pending.
 
-### Prerequisites
+You will use two terminals: **Terminal 1 for the backend** and **Terminal 2 for the frontend**. Keep both running while using the application.
 
-- Node.js 22.13 or newer within the 22.x series, with npm, for the current frontend dependencies.
-- .NET 10 SDK.
-- PostgreSQL installed and running locally, with pgAdmin or the `psql` command-line client for database setup.
-- API keys for OpenAI, Google AI, and remove.bg to generate new collectibles. Registration, login, and collection browsing do not require these keys.
+### 1. Install the required software
 
-The examples below use **PowerShell 7**. Environment variables apply to the terminal in which they are set.
+| Install | Version / purpose |
+| --- | --- |
+| Node.js with npm | Node.js 22.13 or later in the 22.x series, for the frontend |
+| .NET SDK | .NET 10 **SDK**, for building and running the backend |
+| PostgreSQL with pgAdmin | Local database server and a graphical database setup tool |
+| PowerShell | Version 7, for the commands in this guide |
+| Git | Needed only if you use the clone command instead of downloading a ZIP |
 
-### 1. Clone the repository
+Open PowerShell and check the installations:
+
+```powershell
+node --version
+npm --version
+dotnet --list-sdks
+$PSVersionTable.PSVersion
+```
+
+Check that Node shows a suitable 22.x version, the SDK list includes a 10.x entry, and PowerShell shows version 7. PostgreSQL will be checked in Step 3.
+
+### 2. Open the project folder
+
+Download and extract the repository ZIP, or clone it:
 
 ```powershell
 git clone https://github.com/vittorio777/MiniVault.git
 cd MiniVault
 ```
 
-### 2. Prepare PostgreSQL
+If you downloaded a ZIP, open its extracted folder in VS Code and choose **Terminal > New Terminal**. Use a PowerShell 7 terminal.
 
-Install PostgreSQL and start its database service. The examples use its usual local port, **5432**; adjust the connection string if your installation uses a different port.
-
-Connect as a PostgreSQL administrator through pgAdmin's Query Tool or `psql`:
+The terminal must be in the folder containing `README.md`, `backend`, and `frontend`. Check it with:
 
 ```powershell
-psql -h localhost -p 5432 -U postgres -d postgres
+Get-Location
+Get-ChildItem
 ```
 
-For a new local setup, run these statements separately, outside a transaction. Replace the password placeholder with your own local database password:
+This folder is the **repository root** used in the steps below.
+
+### 3. Create the local database
+
+Open pgAdmin and connect to your local PostgreSQL server. During a typical installation, its administrator username is `postgres`; use the password you chose when installing PostgreSQL.
+
+Select the existing `postgres` database and open **Query Tool**. Run the following statements **one at a time**, outside a transaction:
 
 ```sql
 CREATE USER minivault WITH PASSWORD 'your-local-database-password';
+```
+
+Replace `your-local-database-password` with a password of your choice before running the statement. Remember it: you will use the same password in Step 4.
+
+```sql
 CREATE DATABASE mineplus OWNER minivault;
 ```
 
-If using `psql`, enter `\q` to return to PowerShell. If the database and user already exist, reuse them and set the connection string to match. The application user must be able to create and alter tables in that database.
+Refresh the database list in pgAdmin. You should see `mineplus`.
 
-Start with an empty database. The repository includes schema migrations and achievement seed data, but does not include a database backup, user accounts, or existing collectibles. Tables and achievement definitions are created automatically when the backend starts.
+If the user or database already exists, reuse it instead of running the corresponding creation statement again. Use its actual details in Step 4.
 
-Database and user creation are one-time setup steps. Once PostgreSQL is running and the connection string is configured, each backend startup automatically applies any pending migrations. Frontend startup does not perform database migrations.
+Prefer the command line? Connect with `psql -h localhost -p 5432 -U postgres -d postgres`, run the same SQL statements, and enter `\q` to exit. If `psql` is not on your PATH, use pgAdmin.
 
-### 3. Configure and start the backend
+You only need to create the database and user once. **Do not create the application tables manually.** The backend will create them through its existing migrations.
 
-In a terminal at the repository root:
+### 4. Configure the backend connection
+
+In **Terminal 1**, at the repository root, run:
 
 ```powershell
 $env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=mineplus;Username=minivault;Password=your-local-database-password"
+```
+
+Replace the password with the one from Step 3. If your PostgreSQL server uses a different port, change `5432` too.
+
+| Connection field | Value in this guide |
+| --- | --- |
+| Host | `localhost` |
+| Port | `5432` |
+| Database | `mineplus` |
+| Username | `minivault` |
+| Password | The password you set in Step 3 |
+
+Next, generate a local JWT signing key by running this line as written:
+
+```powershell
 $env:Jwt__SecretKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+```
 
-# Optional for browsing; required before generating new collectibles.
-# Replace the placeholders with your own API keys before running these lines.
-# $env:OPENAI_API_KEY = "your-openai-api-key"
-# $env:GOOGLEAI_API_KEY = "your-google-ai-api-key"
-# $env:REMOVE_BG_API_KEY = "your-remove-bg-api-key"
+These commands configure the backend in this terminal without editing tracked configuration files. Keep using **the same terminal** to start the backend.
 
+### 5. Configure AI keys (optional for the first startup)
+
+**Skip this step if you only want to check registration and login first.**
+
+To upload a photo and generate a collectible, obtain your own API keys from OpenAI, Google AI, and remove.bg. In **Terminal 1**, replace each placeholder and run all three lines:
+
+```powershell
+$env:OPENAI_API_KEY = "your-openai-api-key"
+$env:GOOGLEAI_API_KEY = "your-google-ai-api-key"
+$env:REMOVE_BG_API_KEY = "your-remove-bg-api-key"
+```
+
+Generation requires all three keys and available access/quota for the configured models. Keep these keys in backend configuration; do not put them in the frontend's `.env`.
+
+### 6. Start the backend
+
+Still in **Terminal 1**, at the repository root:
+
+```powershell
 dotnet restore backend/backend.csproj
 dotnet run --project backend/backend.csproj --launch-profile http
 ```
 
-The API starts at `http://localhost:5158`. It automatically applies EF Core migrations and seeds five achievement definitions. The configured database must be available and the database user must have permission to apply migrations. No separate `dotnet ef` step is required for this startup path.
+Leave this terminal open. On startup, the backend connects to PostgreSQL, applies pending migrations, and inserts the five achievement definitions. **You do not need to run a separate migration command.**
 
-Check `http://localhost:5158/api/health` for `MiniVault API Running`, or open `http://localhost:5158/scalar/v1` for API documentation.
+Open this address in your browser:
 
-### 4. Configure and start the frontend
+```text
+http://localhost:5158/api/health
+```
 
-In a second terminal at the repository root:
+You should see **MiniVault API Running**. Continue to the frontend only after this check succeeds. The API reference is available at `http://localhost:5158/scalar/v1`.
+
+### 7. Configure the frontend
+
+Open **Terminal 2** at the repository root, then run:
 
 ```powershell
 cd frontend
 Copy-Item .env.example .env
+```
+
+The copy command is for a new checkout. If you already have a `frontend/.env`, check its contents instead of overwriting it.
+
+Open `frontend/.env` in your editor. It should contain:
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:5158
+```
+
+This points the frontend to the backend you started in Step 6. Do not add `/api` to the value. When creating the file manually, make sure its name is exactly `.env`, not `.env.txt`.
+
+### 8. Start the frontend
+
+In **Terminal 2**, inside `frontend`:
+
+```powershell
 npm ci
 npm run dev -- --host localhost --port 5173 --strictPort
 ```
 
-The copy step is for a fresh clone; preserve an existing `.env` with your own settings. Open `http://localhost:5173`. The current CORS policy allows that exact origin; using `127.0.0.1` or a different port can cause API requests to fail.
+Leave this terminal open and visit:
 
-Create an account to use a new local database. Migrations do not seed users or collectibles, so the shared Jerry demo login is not available in a fresh database unless that account is created separately. Without AI keys, a new collection remains empty; generating an item requires all three external services.
+```text
+http://localhost:5173
+```
+
+Use `localhost` and port `5173` exactly; they match the backend's local CORS policy. If the port is occupied, stop the other server using it and run the command again.
+
+### 9. Create your first account
+
+Click **Create an account** and register a local user. Your collection will initially be empty.
+
+The local database is separate from the hosted demo. It contains achievement definitions but no preloaded users or collectibles. **Continue with demo account** uses Jerry's existing credentials and will not work against a new database unless that account is created separately.
+
+If you configured all three AI keys, click **Add collectible**, select a JPG, JPEG, PNG, or WebP image smaller than 20 MB, and wait for generation to complete. Without the keys, you can still register, log in, and inspect the empty collection.
+
+### Starting the project again
+
+Keep PostgreSQL running. In a new backend terminal, repeat Step 4 and, if needed, Step 5 before running the backend command from Step 6. The environment variables are specific to that terminal; `dotnet run` does not automatically load a root `.env` file.
+
+In a second terminal, enter `frontend` and run the frontend command from Step 8. You do not need to recreate the database, copy `.env`, or reinstall dependencies each time. The backend automatically applies any new pending migrations.
 
 ## Environment Variables
 
