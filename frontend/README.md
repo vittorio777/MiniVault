@@ -4,13 +4,13 @@ React and TypeScript client built with Vite. See the [project README](../README.
 
 ## Development
 
-Requires Node.js 22.13 or later in the 22.x series, with npm. Start the backend at `http://localhost:5158`, then create `frontend/.env`:
+Requires Node.js 22.13 or later in the 22.x series, with npm. Start the backend at `http://localhost:5158`. The repository includes `frontend/.env` with this default local API address:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:5158
 ```
 
-From this directory:
+No additional frontend configuration is needed unless your backend runs at a different address. From this directory:
 
 ```powershell
 npm ci
@@ -30,4 +30,4 @@ Open `http://localhost:5173`. Restart Vite after changing `.env`. The API addres
 | `npm test` | Run Vitest in watch mode |
 | `npm run test:run` | Run tests once |
 
-Production builds use the API origin in `.env.production`. For local API requests, use frontend port 5173 to match the backend CORS policy.
+Production builds use the API origin in `.env.production`. `npm run preview` serves the built version with that API origin; use `npm run dev` for local development. For local API requests, use frontend port 5173 to match the backend CORS policy.

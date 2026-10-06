@@ -2,7 +2,6 @@
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-frontend/.env
 frontend/.env.local
 
 # .NET
@@ -17,6 +16,7 @@ backend/wwwroot/*
 .env
 .env.local
 *.env
+!frontend/.env
 
 # Logs
 *.log

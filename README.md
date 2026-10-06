@@ -167,11 +167,13 @@ Local uploads are created under `backend/wwwroot/uploads` and served by the API 
 
 ### 4. Configure and Run the Frontend
 
-Create `frontend/.env` with the following content:
+The repository includes `frontend/.env` with the default local API address:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:5158
 ```
+
+No additional frontend configuration is needed for the setup above. If your backend runs at a different address, update this value. This file contains public browser configuration only; keep database passwords and AI keys in backend configuration.
 
 In a separate terminal, from the repository root, install frontend dependencies and start the development server:
 
@@ -182,6 +184,8 @@ npm run dev -- --host localhost --port 5173 --strictPort
 ```
 
 Open `http://localhost:5173`. This origin matches the backend's local CORS policy. Restart the frontend after changing `.env`.
+
+Use `npm run dev` for local development. Production builds use `frontend/.env.production`, which points to the hosted API; `npm run preview` serves that built version rather than switching it to the local API.
 
 Register a local account to start using the application. The new database contains no user accounts or collectibles. Once AI keys are configured, use **Add collectible** to upload a JPG, JPEG, PNG, or WebP image smaller than 20 MB.
 
