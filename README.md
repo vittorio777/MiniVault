@@ -1,109 +1,113 @@
 # MiniVault
 
-A full-stack web application that turns photos into AI-generated miniature collectibles and keeps them in a personal digital collection.
+MiniVault turns photos into AI-generated miniature collectibles that users can browse, organize, and manage in a personal collection.
 
 **[Live Demo](https://minivault.online)** | **[API Reference](https://minivault-api-ejf7d3g8awahg4ev.australiaeast-01.azurewebsites.net/scalar/v1)**
 
-Choose **Continue with demo account** to explore the hosted application without registering. The demo uses a shared account; changes to its collection are visible to other visitors.
+Choose **Continue with demo account** to explore the application without registering.
 
-![MiniVault homepage with the demo-account entry point](docs/images/home-current.jpg)
+![MiniVault homepage](docs/images/home-current.jpg)
 
-## Overview
+## Features
 
-MiniVault combines image analysis, image generation, and background removal in one upload workflow. Users can revisit generated artwork, organize collectibles by category, edit their metadata, and track collection achievements.
-
-The repository contains the React client, ASP.NET Core API, database migrations, automated tests, and Azure deployment workflows.
-
-### From Photo to Collectible
-
-An example from the project's presentation page:
-
-| Original photo | Generated miniature |
-| --- | --- |
-| <img src="docs/images/original-photo.jpg" alt="Original Melbourne tram photo" width="300"> | <img src="docs/images/miniature-result.png" alt="AI-generated miniature Melbourne tram on a display base" width="300"> |
-
-## Key Features
-
-- Photo-to-miniature generation with an automatically generated title, category, and description.
-- Personal collection browsing, category filtering, and collectible detail views.
-- Editing and deletion of collectibles, restricted to their owner.
-- Account registration, JWT login, and a shared demo-account entry point.
-- Collection achievements based on total items and category counts.
-
-## Screenshots
-
-### Collection
-
-![Current MiniVault collection page](docs/images/collection-current.jpg)
-
-### Collectible Details
-
-![Current MiniVault collectible detail page](docs/images/detail-current.jpg)
+- Generate miniature artwork from a photo, with an AI-generated title, category, and description.
+- Browse a collection by category, view individual collectibles, and edit or delete items.
+- Register and log in to manage your own collection.
+- Unlock achievements based on collection size and categories.
 
 ## Tech Stack
 
 | Area | Technologies |
 | --- | --- |
-| Frontend | React 19, TypeScript, Vite 8, React Router, Bootstrap / React Bootstrap, CSS |
+| Frontend | React 19, TypeScript, Vite 8, React Router, React Bootstrap |
 | Backend | C#, ASP.NET Core / .NET 10, Entity Framework Core 10 |
-| Database | PostgreSQL, Npgsql EF Core provider |
-| AI and images | OpenAI .NET SDK, Google GenAI SDK, remove.bg HTTP API |
-| Testing | Vitest, React Testing Library, jsdom; xUnit, EF InMemory, SQLite in-memory, Coverlet collector |
-| Delivery | GitHub Actions, Azure Static Web Apps, Azure App Service |
-| API documentation | ASP.NET Core OpenAPI, Scalar |
+| Database | PostgreSQL, Npgsql |
+| AI services | OpenAI, Google AI, remove.bg |
+| Testing | Vitest, React Testing Library, xUnit, SQLite in-memory, EF InMemory |
+| Deployment | GitHub Actions, Azure Static Web Apps, Azure App Service |
+| API documentation | OpenAPI, Scalar |
 
-## Architecture
+## Screenshots
 
-```mermaid
-flowchart LR
-    Browser[React client] -->|HTTP and JWT| API[ASP.NET Core controllers]
-    API --> Services[Application services]
-    Services --> EF[EF Core]
-    EF --> DB[(PostgreSQL)]
-    Services -->|Image metadata| OpenAI[OpenAI]
-    Services -->|Miniature artwork| Google[Google AI]
-    Services -->|Background removal| RemoveBg[remove.bg]
-    Services --> Storage[Local image storage]
-    Browser -->|Image URLs| Files[API static files]
-    Files --> Storage
-```
+### Photo to Miniature
 
-Controllers handle HTTP requests and authentication; services implement collection, user, achievement, and generation behavior. Services access the database through `AppDbContext` directly.
+| Original photo | Generated collectible |
+| --- | --- |
+| <img src="docs/images/original-photo.jpg" alt="Original Melbourne tram photo" width="300"> | <img src="docs/images/miniature-result.png" alt="Generated miniature tram" width="300"> |
 
-The upload request runs these steps sequentially:
+### Collection
 
-1. Validate and store the original image.
-2. Ask OpenAI (`gpt-5.4-nano`) for JSON metadata.
-3. Ask Google AI (`gemini-2.5-flash-image`) for miniature artwork.
-4. Remove the generated image's background through remove.bg.
-5. Save the collectible, delete the intermediate artwork, and refresh achievement progress.
+![MiniVault collection](docs/images/collection-current.jpg)
 
-Google image generation retries selected transient errors with exponential backoff. Failed generation attempts clean up partially stored files before the collectible is saved. This workflow runs inside the HTTP request, not in a background queue.
+### Collectible Details
 
-Image files are stored under `backend/wwwroot/uploads` in development and `/home/data/minivault/uploads` outside development. The database stores image URLs; the API serves files through `/uploads`.
+![MiniVault collectible details](docs/images/detail-current.jpg)
 
 ## Project Structure
 
+The React client communicates with an ASP.NET Core API. Controllers handle requests, application services implement business logic, and EF Core accesses PostgreSQL.
+
+During capture, the backend stores the uploaded photo, generates metadata with OpenAI and artwork with Google AI, removes the background, saves the collectible, and updates achievements. Selected Google AI failures are retried with exponential backoff; unsuccessful captures clean up partially stored files.
+
+JWT authentication and ownership checks protect collection endpoints. Passwords use salted PBKDF2, and collection lists use a five-minute per-user memory cache that is invalidated after changes.
+
+Images are served through `/uploads` and stored in `backend/wwwroot/uploads` during development or `/home/data/minivault/uploads` outside development.
+
+The main repository directories are:
+
 ```text
 MiniVault/
-  frontend/          React client, API helpers, components, and frontend tests
-  backend/           Controllers, services, DTOs, models, and EF Core migrations
-  backend.Tests/     User, collection, and achievement service tests
-  .github/workflows/ Frontend and backend Azure deployment workflows
-  docs/              Standalone presentation page and existing screenshots
-  specs/             AI-assisted development prompt notes
+|-- frontend/
+|   |-- src/
+|   |   |-- pages/                  Collection homepage and collectible viewer
+|   |   |-- components/
+|   |   |   |-- collection/         Collection grid and cards
+|   |   |   |-- user/               Login, registration, and account controls
+|   |   |   |-- viewer/             Details, editing, and deletion dialogs
+|   |   |   |-- achievement/        Achievement drawer and progress items
+|   |   |   |-- CategoryMenu.tsx    Category filtering
+|   |   |   `-- UploadButton.tsx    Photo upload and generation
+|   |   |-- api/                    HTTP client and endpoint helpers
+|   |   |-- types/                  Collectible and achievement types
+|   |   |-- utils/                  Image URLs and achievement notifications
+|   |   |-- test/                   Shared test setup
+|   |   `-- App.tsx                 Application routes
+|   |-- public/                     Favicons and static assets
+|   |-- package.json                Dependencies and development commands
+|   `-- vite.config.ts              Vite and Vitest configuration
+|-- backend/
+|   |-- Controllers/                User, collection, generation, and achievement APIs
+|   |-- Services/
+|   |   |-- Storage/                Image storage interface and filesystem implementation
+|   |   `-- *.cs                    Authentication, generation, collection, and achievements
+|   |-- Data/                       EF Core database context
+|   |-- Models/                     Database entities
+|   |-- DTOs/                       Request validation and response types
+|   |-- Migrations/                 Database schema changes and achievement seeds
+|   |-- Extensions/                 User identity helpers and image-serving setup
+|   |-- Settings/                   JWT configuration types
+|   |-- Properties/                 Local launch profiles
+|   |-- wwwroot/uploads/            Local images, created at runtime and ignored by Git
+|   |-- appsettings.json            Application configuration
+|   `-- Program.cs                  Service registration and request pipeline
+|-- backend.Tests/                  User, collection, achievement, and image-serving tests
+|-- .github/workflows/              Azure build and deployment workflows
+|-- docs/
+|   |-- images/                     Screenshots and photo-to-miniature examples
+|   |-- index.html                  Presentation page
+|   `-- style.css                   Presentation styling
+|-- specs/                          AI-assisted development prompt notes
+`-- README.md                       Project overview and development guide
 ```
 
 ## Getting Started
-
-Run the frontend and backend directly from source with a local PostgreSQL database. The examples use **PowerShell 7**; fresh-clone verification is still pending.
 
 ### Prerequisites
 
 - Node.js 22.13 or later in the 22.x series, with npm.
 - .NET 10 SDK.
 - PostgreSQL running locally, with pgAdmin or `psql`.
-- OpenAI, Google AI, and remove.bg API keys for collectible generation.
+- OpenAI, Google AI, and remove.bg API keys to generate collectibles.
 
 ### 1. Clone the Repository
 
@@ -112,102 +116,80 @@ git clone https://github.com/vittorio777/MiniVault.git
 cd MiniVault
 ```
 
-Alternatively, download the repository ZIP and open the extracted project folder.
-
 ### 2. Prepare the Database
 
-Connect to PostgreSQL as an administrator using pgAdmin or `psql`. Create a local application user and database, executing each statement separately outside a transaction:
+Connect to PostgreSQL as an administrator. Run each statement separately outside a transaction, replacing the password placeholder:
 
 ```sql
 CREATE USER minivault WITH PASSWORD 'your-local-database-password';
 CREATE DATABASE mineplus OWNER minivault;
 ```
 
-Replace the password placeholder with your own value. If you already have a database and user, reuse them and adjust the connection string below. The user must have permission to create and alter tables.
+The backend creates the tables and seeds five achievement definitions automatically on startup.
 
 ### 3. Configure and Run the Backend
 
-From the repository root, configure the PostgreSQL connection and JWT signing key:
+In `backend/appsettings.json`, update the existing `ConnectionStrings.DefaultConnection` value to match your database:
 
-```powershell
-$env:ConnectionStrings__DefaultConnection = "Host=localhost;Port=5432;Database=mineplus;Username=minivault;Password=your-local-database-password"
-$env:Jwt__SecretKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=mineplus;Username=minivault;Password=your-local-database-password"
+  }
+}
 ```
 
-Use the database password from the previous step and adjust the host or port if needed.
+Keep the other existing settings, including `Jwt`, which already provides a local development signing key.
 
-To enable image generation, set all three API keys in the same terminal:
+For image generation, add these sections to the same top-level JSON object:
 
-```powershell
-$env:OPENAI_API_KEY = "your-openai-api-key"
-$env:GOOGLEAI_API_KEY = "your-google-ai-api-key"
-$env:REMOVE_BG_API_KEY = "your-remove-bg-api-key"
+```json
+{
+  "OpenAI": { "ApiKey": "your-openai-api-key" },
+  "GoogleAI": { "ApiKey": "your-google-ai-api-key" },
+  "RemoveBg": { "ApiKey": "your-remove-bg-api-key" }
+}
 ```
 
-Replace the placeholders with your own keys. These are optional for registration and login, but generation requires all three services and available model access/quota.
+Use your own API keys. Registration and login work without these sections. Keep real keys and private database credentials out of commits.
 
-Start the backend:
+From the repository root, install backend dependencies and start the API:
 
 ```powershell
-dotnet restore backend/backend.csproj
-dotnet run --project backend/backend.csproj --launch-profile http
+cd backend
+dotnet restore
+dotnet run --launch-profile http
 ```
 
-The API runs at `http://localhost:5158`. On startup, it automatically applies EF Core migrations and seeds five achievement definitions; no manual table creation or separate migration command is needed.
+The API runs at `http://localhost:5158`. Check `http://localhost:5158/api/health` for **MiniVault API Running**, or open `http://localhost:5158/scalar/v1` for API documentation.
 
-Check `http://localhost:5158/api/health` for **MiniVault API Running**. API documentation is available at `http://localhost:5158/scalar/v1`.
+Local uploads are created under `backend/wwwroot/uploads` and served by the API at `/uploads`. Database migrations create tables and seed data; copying database rows does not copy their image files.
 
 ### 4. Configure and Run the Frontend
 
-In a separate terminal, from the repository root:
-
-```powershell
-cd frontend
-Copy-Item .env.example .env
-npm ci
-```
-
-Preserve an existing `.env` if you have already configured one. Its local API setting should be:
+Create `frontend/.env` with the following content:
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:5158
 ```
 
-Start the development server:
+In a separate terminal, from the repository root, install frontend dependencies and start the development server:
 
 ```powershell
+cd frontend
+npm ci
 npm run dev -- --host localhost --port 5173 --strictPort
 ```
 
-Open `http://localhost:5173`, which matches the backend's local CORS policy. Keep both servers running.
+Open `http://localhost:5173`. This origin matches the backend's local CORS policy. Restart the frontend after changing `.env`.
 
-Register a local account to begin. A new database contains achievement definitions but no users or collectibles; the shared demo account is only available if that account exists in the database. With AI keys configured, use **Add collectible** to upload a JPG, JPEG, PNG, or WebP image smaller than 20 MB.
-
-For subsequent runs, start PostgreSQL and both servers. Backend environment variables must be set again in a new terminal; frontend `.env` settings persist. Dependency installation and database/user creation are only needed for initial setup or relevant dependency changes.
-
-## Environment Variables
-
-| Variable | Purpose |
-| --- | --- |
-| `VITE_API_BASE_URL` | Frontend API origin, without a trailing `/api`; local development uses `http://localhost:5158` |
-| `ConnectionStrings__DefaultConnection` | Backend PostgreSQL connection string |
-| `Jwt__SecretKey` | Backend JWT signing key; use a private random value rather than the committed development default |
-| `Jwt__Issuer`, `Jwt__Audience`, `Jwt__ExpirationMinutes` | JWT identity and lifetime settings; defaults are in `backend/appsettings.json` |
-| `OPENAI_API_KEY` | OpenAI image analysis and metadata generation |
-| `GOOGLEAI_API_KEY` | Google AI miniature image generation |
-| `REMOVE_BG_API_KEY` | remove.bg background removal |
-
-ASP.NET Core also accepts `OpenAI:ApiKey`, `GoogleAI:ApiKey`, and `RemoveBg:ApiKey` configuration entries (environment equivalents: `OpenAI__ApiKey`, `GoogleAI__ApiKey`, `RemoveBg__ApiKey`). These take precedence over the uppercase API key variables.
-
-[`frontend/.env.example`](frontend/.env.example) supplies the local frontend origin. Vite loads frontend environment files at startup/build time; restart the dev server after changing them. `VITE_` values are public client configuration, so never put secret keys there. `.env.production` selects the hosted API during a normal production build.
-
-The root [`.env.example`](.env.example) lists the backend API key variable names as a reference. **`dotnet run` does not automatically load `.env` files**; set backend variables in the terminal before starting the API, as shown above. Local `.env` files are ignored by Git.
-
-The `Cors:AllowedOrigins` configuration section currently does not control CORS. Allowed origins are defined in `backend/Program.cs`.
+Register a local account to start using the application. The new database contains no user accounts or collectibles. Once AI keys are configured, use **Add collectible** to upload a JPG, JPEG, PNG, or WebP image smaller than 20 MB.
 
 ## Testing
 
-Run frontend checks from `frontend/`:
+### Frontend
+
+From `frontend/`:
 
 ```powershell
 npm run test:run
@@ -215,54 +197,33 @@ npm run lint
 npm run build
 ```
 
-`npm test` runs Vitest in watch mode. The five frontend test files contain 32 test cases covering authentication helpers, the login modal, category selection, collection rendering, and delete confirmation interactions. API requests in these tests are mocked.
+Vitest and React Testing Library cover authentication helpers, login, category selection, collection rendering, and delete confirmation. The suite contains 32 cases across five files and mocks API requests. `npm test` runs tests in watch mode.
 
-Run backend tests from the repository root:
+### Backend
+
+From the repository root:
 
 ```powershell
 dotnet test backend.Tests/backend.Tests.csproj
+```
+
+The 17 xUnit cases cover user registration/login, collection operations and ownership checks, achievement progress, and image serving from a fresh local checkout. User-service tests use SQLite in-memory; collection and achievement tests use EF InMemory. Image tests exercise static-file middleware and verify the Azure storage path.
+
+To collect backend coverage:
+
+```powershell
 dotnet test backend.Tests/backend.Tests.csproj --collect:"XPlat Code Coverage"
 ```
 
-The three backend test files contain 14 xUnit cases covering registration and login, collection creation/query/update/deletion and ownership checks, and achievement initialization/progress/unlocking. User-service tests use SQLite in-memory; collection and achievement tests use EF InMemory. Coverage output is written under `backend.Tests/TestResults`.
+## Deployment and CI/CD
 
-These tests do not exercise real PostgreSQL migrations, external AI services, Azure deployment, or a complete browser workflow. Frontend coverage tooling is not configured. Test counts describe the current source, not a verified passing run or coverage percentage.
+The frontend is deployed to Azure Static Web Apps at `minivault.online`; the API is deployed to Azure App Service as `minivault-api`. The backend connects to PostgreSQL through its configured connection string.
 
-## CI/CD
-
-| Workflow | Triggers | Actual steps |
+| Workflow | Trigger | Behavior |
 | --- | --- | --- |
-| [Frontend](.github/workflows/azure-static-web-apps-polite-coast-0b83c1900.yml) | Push to `main`; PR opened, synchronized, reopened, or closed against `main` | Azure Static Web Apps action builds `frontend/` and deploys `dist`; closing a PR closes its preview deployment |
-| [Backend](.github/workflows/main_minivault-api.yml) | Push to `main`; manual dispatch | Set up .NET 10, build and publish the API, upload an artifact, authenticate to Azure, deploy to the App Service Production slot |
+| [Frontend](.github/workflows/azure-static-web-apps-polite-coast-0b83c1900.yml) | Push to `main` and PR events against `main` | Builds the frontend and deploys to Azure Static Web Apps; closes the preview deployment when a PR closes |
+| [Backend](.github/workflows/main_minivault-api.yml) | Push to `main` or manual dispatch | Builds and publishes the API, then deploys to Azure App Service |
 
-Neither workflow explicitly runs automated tests or lint. Backend PR builds are not configured. Frontend PR previews use the committed production API address and therefore target the hosted backend.
+These workflows build and deploy; they do not run the test suites. Deployment authentication uses GitHub secrets defined in the workflow files.
 
-The frontend workflow uses a Static Web Apps deployment-token secret and `GITHUB_TOKEN`. The backend uses Azure client-ID, tenant-ID, and subscription-ID secrets with OIDC authentication. Exact secret names are in the workflow files; secret values are not in the repository.
-
-## Deployment
-
-- **Frontend:** Azure Static Web Apps, with the custom domain `minivault.online`.
-- **Backend:** Azure App Service, application `minivault-api`, deployed by the backend workflow.
-- **Database:** PostgreSQL selected through `ConnectionStrings__DefaultConnection`. The repository does not establish the hosted database provider or instance configuration.
-- **Images:** Filesystem storage; outside development the application uses `/home/data/minivault/uploads`. Persistence depends on the hosting environment providing persistent storage at that path.
-
-A separate deployment needs a PostgreSQL connection string, a private JWT signing key, and all three API keys for generation. Set these in the hosting environment. Database migrations run when the API starts. Hosting provisioning, custom-domain setup, and database creation are not automated by the repository workflows.
-
-## Security
-
-- JWT bearer validation checks signature, issuer, audience, and expiration.
-- Collection and achievement endpoints require authentication. Collection queries and mutations include the authenticated user's ID.
-- New passwords use salted PBKDF2-SHA256 with 100,000 iterations and fixed-time hash comparison. Successful legacy SHA-256 logins upgrade the stored hash.
-- DTO validation constrains required fields, lengths, and email format. The generation upload validator accepts JPG, JPEG, PNG, and WebP files up to 20 MB.
-- Image storage generates filenames and checks that resolved paths remain inside the uploads directory.
-- CORS permits a fixed set of local and deployed frontend origins.
-
-The demo account is shared and has normal collection permissions. Image URLs are served as static files without authentication. Development database credentials and JWT defaults must not be used for a public deployment. The application does not currently implement request rate limiting.
-
-## Technical Decisions and Trade-offs
-
-- **EF Core and PostgreSQL:** Services use a single database context with versioned schema migrations. This keeps the data flow straightforward; several integrity rules currently rely on application checks rather than database constraints.
-- **Separate frontend and API:** The client can be built and deployed independently. This requires consistent API origins and CORS settings across development, preview, and production.
-- **Multiple AI services:** Metadata analysis, image generation, and background removal have distinct implementations. A capture depends on three providers and their latency, availability, and quotas.
-- **In-memory collection cache:** A five-minute cache per user reduces repeated collection queries and is invalidated after mutations. Cache state is local to one API process.
-- **Filesystem image storage:** One storage interface supports development and the current Azure-oriented path without another storage service. This couples persistence to the host and is not shared object storage.
+For a separate deployment, configure the frontend API origin in `frontend/.env.production` and the backend's `ConnectionStrings__DefaultConnection`, `Jwt__SecretKey`, `OPENAI_API_KEY`, `GOOGLEAI_API_KEY`, and `REMOVE_BG_API_KEY` in the hosting environment. Use a private JWT signing key and allow the frontend origin in `backend/Program.cs`. Database migrations run when the API starts.
